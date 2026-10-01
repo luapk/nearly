@@ -10,6 +10,8 @@ No two words mean exactly the same thing. This is a tool for finding out how the
 
 ## What it does
 
+- **It starts blank.** The page opens on an empty input, set in giant type and already focused,
+  with a **Map it** button beside it. A worked example sits behind a "See an example" link.
 - **The headline is the input.** The word, or the line, is set in giant type and you type
   straight into it. Paste a line and every word in it becomes tappable, so you choose which
   one to interrogate. Enter maps it; Escape cancels.
@@ -35,7 +37,11 @@ talks to Claude in one of two ways:
    Anthropic API key server side. The key is never sent to the browser.
 
 Opened as a plain file with neither available, the example map still works and new lookups are
-disabled with a note saying so.
+disabled. The page says exactly why it isn't connected: no `ANTHROPIC_API_KEY` on the server, no
+`/api/map` function, or the function couldn't be reached.
+
+**If a deployed copy says "the server has no ANTHROPIC_API_KEY"**, add the key in Vercel and then
+**redeploy**. Environment variables only reach deployments made after they are set.
 
 ## Deploying to Vercel
 
@@ -90,7 +96,7 @@ Everything the app knows about is near the top of the script in `index.html`:
 - `LENSES` defines the three chip presets. Add a fourth by naming an `x` and `y` from `DIMS`.
 - `buildPrompt()` is the instruction Claude follows when mapping a word. Edit the field
   descriptions there to change how words are scored, or to swap British spelling for American.
-- `SEED` is the worked example that loads before any lookup.
+- `SEED` is the worked example behind the "See an example" link.
 
 ## Licence
 

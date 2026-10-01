@@ -12,14 +12,14 @@
   box-sizing:border-box;
   padding-top:env(safe-area-inset-top,0px);
   padding-bottom:env(safe-area-inset-bottom,0px);
-  --paper:#ffffff; --ink:#000000; --mid:#6b6b6b; --rule:#cfcfcf; --faint:#eeeeee;
+  --paper:#ffffff; --ink:#000000; --mid:#6b6b6b; --rule:#cfcfcf; --faint:#eeeeee; --ghost:#b8b8b8;
   --f:"Helvetica Neue",Helvetica,"Inter Tight",Arial,sans-serif;
   color-scheme:light;
 }
 @media (prefers-color-scheme: dark){
-  :root:not([data-theme="light"]){--paper:#000000;--ink:#ffffff;--mid:#a3a3a3;--rule:#3d3d3d;--faint:#1a1a1a;color-scheme:dark}
+  :root:not([data-theme="light"]){--paper:#000000;--ink:#ffffff;--mid:#a3a3a3;--rule:#3d3d3d;--faint:#1a1a1a;--ghost:#5c5c5c;color-scheme:dark}
 }
-:root[data-theme="dark"]{--paper:#000000;--ink:#ffffff;--mid:#a3a3a3;--rule:#3d3d3d;--faint:#1a1a1a;color-scheme:dark}
+:root[data-theme="dark"]{--paper:#000000;--ink:#ffffff;--mid:#a3a3a3;--rule:#3d3d3d;--faint:#1a1a1a;--ghost:#5c5c5c;color-scheme:dark}
 *,*::before,*::after{box-sizing:border-box}
 html{scroll-padding-top:env(safe-area-inset-top,0px);background:var(--paper)}
 body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--f);font-size:15px;line-height:1.4;-webkit-font-smoothing:antialiased;overflow-x:hidden}
@@ -52,13 +52,19 @@ body.pending .ctl,body.pending .field,body.pending .caption,body.pending .tray{o
 .hero{padding:22px 0 14px}
 .heroline,.heroedit{font-size:var(--hs,120px);font-weight:700;letter-spacing:-.04em;line-height:1.08;margin:0}
 .heroline{overflow-wrap:anywhere}
-.heroedit{display:block;width:100%;border:0;background:transparent;resize:none;overflow:hidden;font-family:inherit;padding:0;outline:none;color:var(--ink);caret-color:var(--ink)}
-.heroedit::placeholder{color:var(--rule)}
+.heroedit{display:block;width:100%;border:0;border-bottom:3px solid var(--ink);background:transparent;resize:none;overflow:hidden;font-family:inherit;padding:0 0 .06em;outline:none;color:var(--ink);caret-color:var(--ink)}
+.heroedit::placeholder{color:var(--ghost);opacity:1}
+.herolabel{display:block;font-size:17px;font-weight:700;margin:0 0 10px}
 .heroedit:focus{outline:none}
 .heroword{background:none;border:0;padding:0;margin:0;font:inherit;letter-spacing:inherit;color:inherit;cursor:text;text-align:left;overflow-wrap:anywhere}
 .heroword:hover{text-decoration:underline;text-decoration-style:dotted;text-decoration-thickness:.035em;text-underline-offset:.1em;text-decoration-color:var(--rule)}
 .actionrow{display:flex;flex-wrap:wrap;gap:12px 18px;align-items:flex-end;padding:16px 0 2px}
 .actionrow .hint{font-size:13px;color:var(--mid);padding-bottom:6px}
+body.blank .go{font-size:19px;padding:0 40px;min-height:56px}
+body.blank .ctl,body.blank .field,body.blank .caption{display:none}
+.steps{margin:0;padding:0 0 0 1.2em;font-size:15px}
+.steps li{padding:6px 0;border-top:1px solid var(--faint)}
+.steps li:first-child{border-top:0}
 .heroline .tok{background:none;border:0;padding:0;margin:0;font:inherit;letter-spacing:inherit;cursor:pointer;color:inherit}
 .heroline .tok:hover{text-decoration:underline;text-decoration-thickness:.05em;text-underline-offset:.08em;text-decoration-color:var(--rule)}
 .heroline .cur,.heroline .cur:hover{text-decoration:underline;text-decoration-thickness:.075em;text-underline-offset:.08em;text-decoration-color:var(--ink);cursor:default}
@@ -281,11 +287,13 @@ const SEED = {
 const keyOf = (w, l, i) => [w, l, i].map(x => (x || '').trim().toLowerCase()).join('|');
 const SEED_KEY = keyOf(SEED.query.word, SEED.query.line, SEED.query.intent);
 const state = {
-  query:{...SEED.query}, head:{...SEED.head}, alts:SEED.alts.map(a => ({...a})),
+  query:{word:'', line:'', intent:''}, head:{}, alts:[],
   loading:false, lens:'fit', hidden:new Set(), selected:null, shortlist:[],
-  trail:[{key:SEED_KEY, w:'quiet'}], currentKey:SEED_KEY, pending:null, editing:false, draft:''
+  trail:[], currentKey:null, pending:null, editing:true, draft:''
 };
-const cache = new Map([[SEED_KEY, snapshot()]]);
+// Nothing is mapped until the writer types something; the worked example sits behind a link.
+const isBlank = () => !state.head.w && !state.pending;
+const cache = new Map([[SEED_KEY, {query:{...SEED.query}, head:{...SEED.head}, alts:SEED.alts.map(a => ({...a}))}]]);
 const details = new Map();
 const fieldPos = new Map();
 
@@ -294,7 +302,7 @@ const fieldPos = new Map();
    /api/map, which holds the API key. Opened as a plain file it does neither and
    the example map still works. */
 const API_URL = '/api/map';
-const engine = {mode:'none', ready:false, checked:false, code:null, needsCode:false};
+const engine = {mode:'none', ready:false, checked:false, code:null, needsCode:false, reason:''};
 try { engine.code = localStorage.getItem('nearly.code') || null; } catch (e) {}
 const engErr = (code, message) => ({code, message: message || code});
 function parseLoose(t) {
@@ -357,8 +365,9 @@ async function initEngine() {
       if (r.ok) {
         const j = await r.json();
         if (j && j.ready) { engine.mode = 'api'; engine.ready = true; engine.needsCode = !!j.protected && !engine.code; }
-      }
-    } catch (e) {}
+        else engine.reason = (j && j.reason) || 'not_ready';
+      } else engine.reason = r.status === 404 ? 'no_api' : `http_${r.status}`;
+    } catch (e) { engine.reason = 'unreachable'; }
   }
   engine.checked = true;
   if (!state.loading) idleStatus();
@@ -443,17 +452,34 @@ function setStatus(text, extra) {
   if (text) $status.append(h('span', {}, text));
   if (extra) $status.append(extra);
 }
+function exampleLink() {
+  return h('button', {type:'button', class:'linkbtn', onclick:() => loadSnapshot(cache.get(SEED_KEY), SEED_KEY)}, 'See an example');
+}
+function newLink(label) {
+  return h('button', {type:'button', class:'linkbtn', onclick:() => startEdit(true, true)}, label || 'Map a new word');
+}
 function idleStatus() {
   if (state.pending) { setStatus('Tap the word you want to map.'); return; }
-  if (state.currentKey === SEED_KEY) {
-    setStatus(`An example to play with: ${q('quiet')} in a line about craft. Type over the line to map your own word.`);
+  if (isBlank()) {
+    setStatus('Nearly plots the alternatives by how well each fits your line and how worn out it is.', exampleLink());
+  } else if (state.currentKey === SEED_KEY) {
+    setStatus(`An example: ${q('quiet')} in a line about craft. Tap words on the map to try them in the line.`, newLink('Map your own word'));
   } else {
-    setStatus(lineOk() ? 'Tap any word on the map to try it in your line, or any word in the line to map that instead.' : 'Tap any word on the map to see what it carries. Type over the word above to map another.');
+    setStatus(lineOk() ? 'Tap any word on the map to try it in your line, or any word in the line to map that instead.' : 'Tap any word on the map to see what it carries, or tap New word to map another.');
   }
-  if (engine.checked && !engine.ready) $status.append(h('span', {style:'color:var(--mid)'}, OFFLINE_NOTE));
+  if (engine.checked && !engine.ready) $status.append(h('span', {style:'color:var(--mid);flex-basis:100%'}, offlineNote()));
   else if (engine.needsCode) $status.append(codeForm());
 }
-const OFFLINE_NOTE = 'Mapping new words needs a connection to Claude, which this copy of the page doesn\u2019t have.';
+const OFFLINE = {
+  no_key:'Not connected: the server has no ANTHROPIC_API_KEY. Add it in Vercel (Settings > Environment Variables), then redeploy.',
+  no_api:'Not connected: this copy of the page has no /api/map function to talk to.',
+  unreachable:'Not connected: couldn\u2019t reach /api/map. Check your connection and reload.'
+};
+function offlineNote() {
+  if (OFFLINE[engine.reason]) return OFFLINE[engine.reason];
+  if (/^https?:$/.test(location.protocol)) return `Not connected: /api/map isn\u2019t ready (${engine.reason || 'unknown'}).`;
+  return 'Mapping new words needs a connection to Claude, which this copy of the page doesn\u2019t have.';
+}
 function codeForm(retry) {
   const inp = h('input', {type:'password', placeholder:'Access code', 'aria-label':'Access code',
     style:'border:0;border-bottom:1px solid var(--ink);background:transparent;font-size:14px;padding:2px 4px;width:120px'});
@@ -546,16 +572,16 @@ async function lookup(word, line, intent) {
   line = (line || '').trim();
   intent = (intent || '').trim();
   if (!word) { setStatus('Type a word to map.'); startEdit(true); return; }
-  state.pending = null; state.editing = false;
   $i.value = intent;
   const key = keyOf(word, line, intent);
   if (ctl) { ctl.abort(); ctl = null; }
   if (cache.has(key)) { loadSnapshot(cache.get(key), key); return; }
   if (!engine.ready) {
-    setStatus(engine.checked ? OFFLINE_NOTE : 'Still connecting. Try again in a moment.');
+    setStatus(engine.checked ? offlineNote() : 'Still connecting. Try again in a moment.', engine.checked && isBlank() ? exampleLink() : null);
     return;
   }
   if (engine.needsCode) { setStatus('Enter the access code to map words.', codeForm(() => lookup(word, line, intent))); return; }
+  state.pending = null; state.editing = false;
   const has = !!line && line.toLowerCase().includes(word.toLowerCase());
   state.query = {word, line, intent};
   state.head = {w:word};
@@ -602,6 +628,10 @@ function finish(my, key, err) {
   document.body.classList.remove('busy');
   if (!err && state.alts.length > 0) cache.set(key, snapshot());
   if (state.alts.length) addTrail(key, state.head.w);
+  else {
+    state.draft = state.query.line || state.query.word;
+    state.query = {word:'', line:'', intent:state.query.intent}; state.head = {}; state.currentKey = null; state.editing = true;
+  }
   renderAll();
   if (!err) {
     if (state.alts.length) idleStatus(); else setStatus(ERR.empty_completion);
@@ -714,9 +744,10 @@ function heroSize(text) {
   }
   return 24;
 }
-function startEdit(all) {
+function startEdit(all, fresh) {
   state.editing = true;
-  state.draft = heroText();
+  state.pending = fresh ? null : state.pending;
+  state.draft = fresh ? '' : heroText();
   state.selected = null;
   renderHero(); renderDetail(); idleStatus();
   const ta = $hero.querySelector('.heroedit');
@@ -724,14 +755,15 @@ function startEdit(all) {
   ta.focus();
   if (all) ta.select(); else ta.setSelectionRange(ta.value.length, ta.value.length);
 }
-function cancelEdit() { state.editing = false; renderHero(); idleStatus(); }
+function cancelEdit() { if (isBlank()) return; state.editing = false; renderHero(); idleStatus(); }
+const PLACEHOLDER = 'Type a word';
 function editor() {
-  const ta = h('textarea', {class:'heroedit', rows:'1', spellcheck:'false', autocapitalize:'off', autocomplete:'off',
-    'aria-label':'The word to map, or the line it lives in', placeholder:'Type a word', enterkeyhint:'go',
-    style:`--hs:${heroSize(state.draft || 'word')}px`});
+  const ta = h('textarea', {class:'heroedit', id:'heroedit', rows:'1', spellcheck:'false', autocapitalize:'off', autocomplete:'off',
+    placeholder:PLACEHOLDER, enterkeyhint:'go',
+    style:`--hs:${heroSize(state.draft || PLACEHOLDER)}px`});
   ta.value = state.draft;
   const grow = () => {
-    ta.style.setProperty('--hs', `${heroSize(ta.value || 'word')}px`);
+    ta.style.setProperty('--hs', `${heroSize(ta.value || PLACEHOLDER)}px`);
     ta.style.height = 'auto';
     ta.style.height = `${ta.scrollHeight}px`;
   };
@@ -749,7 +781,7 @@ function editor() {
 }
 function actionRow() {
   return h('div', {class:'actionrow'},
-    h('button', {type:'button', class:'go', onclick:go}, 'Map it'),
+    h('button', {type:'button', class:'go', onclick:go}, 'Map it \u2192'),
     h('label', {class:'fld intent'}, h('span', {}, 'It should feel (optional)'), $i),
     h('span', {class:'hint'}, state.editing && (state.draft || '').trim().split(/\s+/).length > 1 ? 'You\u2019ll pick the word to map next.' : 'A word, or the whole line.'));
 }
@@ -773,7 +805,11 @@ function renderHero() {
   document.body.classList.toggle('pending', !!state.pending);
   $hero.textContent = '';
   const hd = state.head;
-  if (state.editing) { $hero.append(editor(), actionRow()); return; }
+  document.body.classList.toggle('blank', isBlank());
+  if (state.editing) {
+    $hero.append(h('label', {class:'herolabel', for:'heroedit'}, 'Start with a word, or paste the line it lives in'), editor(), actionRow());
+    return;
+  }
   if (state.pending) {
     $hero.append(h('div', {class:'heroprompt'}, tokenise(state.pending, w => lookup(w, state.pending, $i.value), null)));
     $hero.append(h('div', {class:'swapbar'},
@@ -807,8 +843,8 @@ function renderHero() {
   bits.push([`${state.alts.length} alternatives`]);
   if (state.query.intent) bits.push([h('small', {}, 'Feels'), state.query.intent]);
   for (const b of bits) meta.append(h('span', {}, ...b));
-  meta.append(h('span', {}, h('button', {type:'button', class:'linkbtn', onclick:() => startEdit(!lineOk())},
-    lineOk() ? 'Edit the line' : 'Map another word')));
+  if (lineOk()) meta.append(h('span', {}, h('button', {type:'button', class:'linkbtn', onclick:() => startEdit(false)}, 'Edit the line')));
+  meta.append(h('span', {}, newLink('New word')));
   $hero.append(meta);
 }
 
@@ -1054,7 +1090,7 @@ const ro = new ResizeObserver(() => {
   if (Math.abs(w - lastW) > 2) drawField(false);
   const el = $hero.querySelector('.heroedit') || $hero.querySelector('.heroline');
   if (el) {
-    const txt = el.classList.contains('heroedit') ? (el.value || 'word') : el.textContent;
+    const txt = el.classList.contains('heroedit') ? (el.value || PLACEHOLDER) : el.textContent;
     el.style.setProperty('--hs', `${heroSize(txt)}px`);
     if (el.classList.contains('heroedit')) { el.style.height = 'auto'; el.style.height = `${el.scrollHeight}px`; }
   }
@@ -1097,6 +1133,14 @@ function renderDetail() {
   if (!a) {
     const hd = state.head;
     const box = h('div', {class:'d-idle'});
+    if (isBlank()) {
+      box.append(h('div', {class:'dsec', style:'border-top:0;padding-top:0'}, h('small', {}, 'How it works'), h('ol', {class:'steps'},
+        h('li', {}, 'Type a word, or paste the whole line.'),
+        h('li', {}, 'If it\u2019s a line, tap the word you want to replace.'),
+        h('li', {}, 'Tap any alternative on the map to read it in your line.'))));
+      $detail.append(box);
+      return;
+    }
     box.append(h('p', {class:'d-empty'}, lineOk() ? 'Tap a word on the map to try it in your line and see what it carries.' : 'Tap a word on the map to see what it carries.'));
     if (hd.senses && hd.senses.length > 1) {
       const ul = h('ul', {class:'senselist'});
@@ -1150,7 +1194,7 @@ function renderDetail() {
 /* ---------- Render: path ---------- */
 function renderTrail() {
   $trail.textContent = '';
-  if (state.trail.length < 2 && state.currentKey === SEED_KEY) { $trail.append(h('small', {}, 'Your path through words appears here as you map them.')); return; }
+  if (state.trail.length < 2) { $trail.append(h('small', {}, 'Your path through words appears here as you map them.')); return; }
   $trail.append(h('small', {}, 'Your path'));
   state.trail.forEach((tr, i) => {
     const snapT = cache.get(tr.key);
@@ -1185,8 +1229,9 @@ document.addEventListener('keydown', e => {
 
 $i.value = state.query.intent;
 renderAll(); idleStatus();
+{ const ta = $hero.querySelector('.heroedit'); if (ta) ta.focus({preventScroll:true}); }
 initEngine();
-if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { if (!state.editing) renderHero(); drawField(false); });
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { if (!state.editing) renderHero(); else { const ta = $hero.querySelector('.heroedit'); if (ta) ta.dispatchEvent(new Event('input')); } drawField(false); });
 })();
 </script>
 </body>
