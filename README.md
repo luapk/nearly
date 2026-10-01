@@ -15,8 +15,10 @@ No two words mean exactly the same thing. This is a tool for finding out how the
 - **The headline is the input.** The word, or the line, is set in giant type and you type
   straight into it. Paste a line and every word in it becomes tappable, so you choose which
   one to interrogate. Enter maps it; Escape cancels.
-- **Three lenses.** Fresh against fit (the prize corner is top right), Tone (register against
-  temperature), and Sound (fit against length, with each word's stress pattern drawn beside it).
+- **Three ways to compare.** Under "Compare words by": **Best fit** (fit against freshness, look
+  top right), **Tone** (plain to formal, cool to warm, measured from your word), and **Sound** (fit
+  against length, with each word's stress pattern drawn beside it). A one-line key above the map
+  says how to read the current view, and the corners are labelled in plain words.
 - **The line is live.** Selecting a word rewrites your line at the top of the page, with the
   swapped word inverted. Copy it from there.
 - **Shortlist.** Collect candidates across several maps and copy the set out in one go.
@@ -93,7 +95,8 @@ docs/           screenshot
 Everything the app knows about is near the top of the script in `index.html`:
 
 - `DIMS` defines the six scales and their end labels.
-- `LENSES` defines the three chip presets. Add a fourth by naming an `x` and `y` from `DIMS`.
+- `LENSES` defines the three ways to compare. Add a fourth by naming an `x` and `y` from `DIMS`,
+  a `read` line, four plain-word `corners` and, optionally, which corner is `best`.
 - `buildPrompt()` is the instruction Claude follows when mapping a word. Edit the field
   descriptions there to change how words are scored, or to swap British spelling for American.
 - `SEED` is the worked example behind the "See an example" link.

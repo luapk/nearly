@@ -92,6 +92,13 @@ body.blank .ctl,body.blank .field,body.blank .caption{display:none}
 .grp>small{font-size:12px;color:var(--mid);margin-right:4px}
 .chip{border:1px solid var(--ink);background:none;font-size:13px;padding:5px 10px;cursor:pointer;line-height:1.2}
 .chip[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+.lensgrp{flex-basis:100%}
+.lensbtn{border:1px solid var(--ink);background:none;padding:6px 12px 7px;cursor:pointer;text-align:left;display:flex;flex-direction:column;gap:1px;line-height:1.2}
+.lensbtn b{font-size:14px}
+.lensbtn span{font-size:12px;color:var(--mid)}
+.lensbtn[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+.lensbtn[aria-pressed="true"] span{color:inherit;opacity:.75}
+.lensread{flex-basis:100%;margin:0;font-size:14px;max-width:72ch}
 
 /* Field */
 .field{position:relative}
@@ -102,6 +109,7 @@ body.blank .ctl,body.blank .field,body.blank .caption{display:none}
 .axlab{fill:var(--ink);font-size:12px;font-weight:700}
 .axname{fill:var(--mid);font-size:12px}
 .corner{fill:var(--mid);font-size:11px}
+.corner.best{fill:var(--ink);font-size:12px;font-weight:700}
 .dot{fill:var(--ink)}
 .dot.ghost{opacity:.18}
 .leader{stroke:var(--mid);stroke-width:.75}
@@ -188,6 +196,9 @@ button.tag:hover{background:var(--ink);color:var(--paper)}
   .thesis{font-size:13px;text-align:left}
   .actionrow{gap:12px}
   .actionrow .go{width:100%}
+  .lensgrp{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}
+  .lensgrp>small{grid-column:1/-1}
+  .lensbtn{padding:6px 8px 7px}
   .stage{grid-template-columns:minmax(0,1fr);padding:0 16px 40px}
   .detail{position:fixed;left:0;right:0;bottom:0;top:auto;max-height:78vh;border-left:0;border-top:3px solid var(--ink);background:var(--paper);padding:14px 16px calc(24px + env(safe-area-inset-bottom,0px));transform:translateY(105%);visibility:hidden;transition:transform .28s ease,visibility 0s linear .28s;z-index:20}
   body.sheet-open .detail{transform:none;visibility:visible;transition:transform .28s ease}
@@ -234,16 +245,24 @@ button.tag:hover{background:var(--ink);color:var(--paper)}
 const DIMS = {
   fresh:{label:'Freshness', lo:'Worn', hi:'Fresh'},
   fit:{label:'Fit', lo:'Weak fit', hi:'Strong fit'},
-  reg:{label:'Register', lo:'Plain', hi:'Elevated'},
+  reg:{label:'Formality', lo:'Plain', hi:'Formal'},
   temp:{label:'Temperature', lo:'Cool', hi:'Warm'},
   int:{label:'Intensity', lo:'Softer', hi:'Stronger'},
   conc:{label:'Texture', lo:'Abstract', hi:'Concrete'},
   syl:{label:'Length', lo:'Shorter', hi:'Longer'}
 };
+// Each lens is a pair of scales for the map. `read` is the one-line key shown above it;
+// `corners` name the four corners in plain words, top-left, top-right, bottom-left, bottom-right.
 const LENSES = {
-  fit:{name:'Fresh \u00D7 fit', x:'fresh', y:'fit', hint:'The prize corner is top right: words that fit and haven\u2019t been worn out.'},
-  tone:{name:'Tone', x:'reg', y:'temp', hint:'Where each word sits against the original: plainer or more elevated, cooler or warmer.'},
-  sound:{name:'Sound', x:'syl', y:'fit', beats:true, hint:'Fit against length, with each word\u2019s beat. Tall block = the stressed syllable.'}
+  fit:{name:'Best fit', sub:'fit and freshness', x:'fresh', y:'fit', best:1,
+    read:ln => `Higher means it fits ${ln} better. Further right means it\u2019s less worn out in advertising. Start in the top right.`,
+    corners:['Fits, but worn', 'Fits and fresh', 'Poor fit, worn', 'Fresh, poor fit']},
+  tone:{name:'Tone', sub:'formality and warmth', x:'reg', y:'temp',
+    read:() => 'Right is more formal, left is plainer. Up is warmer, down is cooler. The cross is your word, so the further a word sits from it, the more it shifts the tone. Bigger words fit better.',
+    corners:['Plain and warm', 'Formal and warm', 'Plain and cool', 'Formal and cool']},
+  sound:{name:'Sound', sub:'fit and length', x:'syl', y:'fit', beats:true, best:0,
+    read:ln => `Higher means it fits ${ln} better. Further right means more syllables. The blocks after each word are its rhythm: the tall block is the stressed beat.`,
+    corners:['Fits, short', 'Fits, long', 'Poor fit, short', 'Poor fit, long']}
 };
 const PROFILE = ['reg','temp','int','conc','fresh'];
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -854,11 +873,12 @@ function chip(label, pressed, onclick, title) {
 }
 function renderControls() {
   $ctl.textContent = '';
-  const g = h('div', {class:'grp'}, h('small', {}, 'Lens'));
+  const g = h('div', {class:'grp lensgrp', role:'group', 'aria-label':'Compare words by'}, h('small', {}, 'Compare words by'));
   for (const [id, L] of Object.entries(LENSES)) {
-    g.append(chip(L.name, state.lens === id, () => { state.lens = id; renderControls(); drawField(true); setCaption(null); }));
+    g.append(h('button', {type:'button', class:'lensbtn', 'aria-pressed':String(state.lens === id),
+      onclick:() => { state.lens = id; renderControls(); drawField(true); setCaption(null); }}, h('b', {}, L.name), h('span', {}, L.sub)));
   }
-  $ctl.append(g);
+  $ctl.append(g, h('p', {class:'lensread'}, LENSES[state.lens].read(lineOk() ? 'your line' : 'general copy')));
   const senses = state.head.senses || [];
   if (senses.length > 1) {
     const sg = h('div', {class:'grp'}, h('small', {}, 'Senses'));
@@ -938,17 +958,17 @@ function drawField(animate) {
   ty(dY.lo, P.y + P.h, 'axlab', 'start');
   ty(dY.label, P.y + P.h / 2, 'axname', 'middle');
   ty(dY.hi, P.y, 'axlab', 'end');
-  const lc = x => x.charAt(0).toLowerCase() + x.slice(1);
   const fixed = [];
-  const corner = (str, x, y, anchor) => {
-    const e = t(str, x, y, 'corner', anchor);
+  const corner = (str, x, y, anchor, best) => {
+    const e = t(str, x, y, best ? 'corner best' : 'corner', anchor);
     const cw = e.getComputedTextLength();
     fixed.push({x:anchor === 'end' ? x - cw - 2 : x - 2, y:y - 11, w:cw + 4, h:14, fixed:true});
   };
-  corner(`${dY.hi}, ${lc(dX.lo)}`, P.x + 6, P.y + 14, 'start');
-  corner(`${dY.hi}, ${lc(dX.hi)}`, P.x + P.w - 6, P.y + 14, 'end');
-  corner(`${dY.lo}, ${lc(dX.lo)}`, P.x + 6, P.y + P.h - 7, 'start');
-  corner(`${dY.lo}, ${lc(dX.hi)}`, P.x + P.w - 6, P.y + P.h - 7, 'end');
+  const cn = L.corners;
+  corner(cn[0], P.x + 6, P.y + 14, 'start', L.best === 0);
+  corner(cn[1], P.x + P.w - 6, P.y + 14, 'end', L.best === 1);
+  corner(cn[2], P.x + 6, P.y + P.h - 7, 'start', L.best === 2);
+  corner(cn[3], P.x + P.w - 6, P.y + P.h - 7, 'end', L.best === 3);
 
   // Original word marker
   if (hd.senses) {
@@ -1081,8 +1101,7 @@ function setCaption(a) {
   $cap.textContent = '';
   if (cur) $cap.append(h('b', {}, cur.w), h('span', {}, cur.note || ''));
   else if (state.alts.length) {
-    const L = LENSES[state.lens];
-    $cap.append(h('span', {}, `Bigger, bolder words fit better. ${L.hint}`));
+    $cap.append(h('span', {}, 'Bigger, bolder words fit better. Point at a word for its note, or tap it to try it.'));
   }
 }
 const ro = new ResizeObserver(() => {
