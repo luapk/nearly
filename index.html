@@ -1,0 +1,1193 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Nearly: a word map for copywriters</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  --paper:#ffffff; --ink:#000000; --mid:#6b6b6b; --rule:#cfcfcf; --faint:#eeeeee;
+  --f:"Helvetica Neue",Helvetica,"Inter Tight",Arial,sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){--paper:#000000;--ink:#ffffff;--mid:#a3a3a3;--rule:#3d3d3d;--faint:#1a1a1a;color-scheme:dark}
+}
+:root[data-theme="dark"]{--paper:#000000;--ink:#ffffff;--mid:#a3a3a3;--rule:#3d3d3d;--faint:#1a1a1a;color-scheme:dark}
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px);background:var(--paper)}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--f);font-size:15px;line-height:1.4;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+button,input{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+b,strong{font-weight:700}
+
+/* Masthead */
+.top{padding:18px 24px 0}
+.brand{display:flex;align-items:baseline;justify-content:space-between;gap:16px;border-bottom:3px solid var(--ink);padding-bottom:8px}
+.mark{font-weight:700;font-size:30px;letter-spacing:-.05em;line-height:1}
+.thesis{font-size:14px;color:var(--mid);text-align:right}
+.fld{display:flex;flex-direction:column;padding:4px 0 2px;border-bottom:1px solid var(--rule);min-width:220px;flex:1 1 220px}
+.fld span{font-size:12px;color:var(--mid)}
+.fld input{border:0;background:transparent;font-size:17px;padding:3px 0 2px;outline:none;width:100%;min-width:0}
+.fld input::placeholder{color:var(--mid);opacity:.7}
+.fld:focus-within span{color:var(--ink)}
+.go{background:var(--ink);color:var(--paper);border:0;font-weight:700;font-size:16px;padding:0 28px;cursor:pointer;min-height:48px}
+.go:active{opacity:.8}
+.busybar{height:3px;background:transparent;overflow:hidden;position:relative}
+body.busy .busybar::after{content:"";position:absolute;top:0;bottom:0;width:30%;background:var(--ink);animation:slide 1.1s linear infinite}
+@keyframes slide{from{left:-30%}to{left:100%}}
+body.pending .ctl,body.pending .field,body.pending .caption,body.pending .tray{opacity:.3;pointer-events:none}
+
+/* Stage */
+.stage{display:grid;grid-template-columns:minmax(0,1fr) 350px;gap:0 32px;padding:0 24px 40px}
+.primary{min-width:0}
+
+/* Hero: the line, or the word */
+.hero{padding:22px 0 14px}
+.heroline,.heroedit{font-size:var(--hs,120px);font-weight:700;letter-spacing:-.04em;line-height:1.08;margin:0}
+.heroline{overflow-wrap:anywhere}
+.heroedit{display:block;width:100%;border:0;background:transparent;resize:none;overflow:hidden;font-family:inherit;padding:0;outline:none;color:var(--ink);caret-color:var(--ink)}
+.heroedit::placeholder{color:var(--rule)}
+.heroedit:focus{outline:none}
+.heroword{background:none;border:0;padding:0;margin:0;font:inherit;letter-spacing:inherit;color:inherit;cursor:text;text-align:left;overflow-wrap:anywhere}
+.heroword:hover{text-decoration:underline;text-decoration-style:dotted;text-decoration-thickness:.035em;text-underline-offset:.1em;text-decoration-color:var(--rule)}
+.actionrow{display:flex;flex-wrap:wrap;gap:12px 18px;align-items:flex-end;padding:16px 0 2px}
+.actionrow .hint{font-size:13px;color:var(--mid);padding-bottom:6px}
+.heroline .tok{background:none;border:0;padding:0;margin:0;font:inherit;letter-spacing:inherit;cursor:pointer;color:inherit}
+.heroline .tok:hover{text-decoration:underline;text-decoration-thickness:.05em;text-underline-offset:.08em;text-decoration-color:var(--rule)}
+.heroline .cur,.heroline .cur:hover{text-decoration:underline;text-decoration-thickness:.075em;text-underline-offset:.08em;text-decoration-color:var(--ink);cursor:default}
+.heroline .in{background:var(--ink);color:var(--paper);padding:0 .08em}
+.heroprompt .tok:hover{background:var(--ink);color:var(--paper);text-decoration:none}
+.swapbar{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px 18px;padding-top:14px;font-size:14px}
+.swapbar b{font-size:15px}
+.linkbtn{background:none;border:0;padding:0;text-decoration:underline;text-underline-offset:3px;cursor:pointer;font-weight:700;font-size:inherit}
+.copy{background:none;border:1px solid var(--ink);font-size:12px;padding:4px 10px;cursor:pointer;white-space:nowrap}
+.meta{display:flex;flex-wrap:wrap;align-items:center;gap:6px 0;border-top:1px solid var(--ink);border-bottom:1px solid var(--ink);margin-top:14px;font-size:14px}
+.meta>span{padding:7px 14px 7px 0;margin-right:14px;border-right:1px solid var(--rule);display:inline-flex;align-items:center;gap:7px;min-height:36px}
+.meta>span:last-child{border-right:0}
+.meta small{color:var(--mid);font-size:12px}
+.status{font-size:14px;margin:10px 0 0;min-height:1.4em;display:flex;gap:12px;align-items:baseline;flex-wrap:wrap}
+
+/* Beat glyph */
+.beat{display:inline-flex;gap:3px;align-items:flex-end;vertical-align:middle}
+.beat i{display:block;width:9px;height:9px;border:1.5px solid var(--ink)}
+.beat i.p{background:var(--ink);height:16px}
+.beat i.s{background:var(--mid);border-color:var(--mid);height:12px}
+
+/* Lens row */
+.ctl{display:flex;flex-wrap:wrap;gap:10px 22px;align-items:center;padding:14px 0 10px}
+.grp{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.grp>small{font-size:12px;color:var(--mid);margin-right:4px}
+.chip{border:1px solid var(--ink);background:none;font-size:13px;padding:5px 10px;cursor:pointer;line-height:1.2}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+
+/* Field */
+.field{position:relative}
+.field svg{display:block;width:100%;height:auto;overflow:visible;font-family:var(--f)}
+.grid line{stroke:var(--faint);stroke-width:1}
+.axis{stroke:var(--rule);stroke-width:1}
+.frame{fill:none;stroke:var(--ink);stroke-width:1}
+.axlab{fill:var(--ink);font-size:12px;font-weight:700}
+.axname{fill:var(--mid);font-size:12px}
+.corner{fill:var(--mid);font-size:11px}
+.dot{fill:var(--ink)}
+.dot.ghost{opacity:.18}
+.leader{stroke:var(--mid);stroke-width:.75}
+.lab{cursor:pointer;outline:none}
+.lab text{fill:var(--ink)}
+.lab .hl{fill:var(--ink);opacity:0}
+.lab .ring{fill:none;stroke:var(--ink);stroke-width:1.5;opacity:0}
+.lab:hover text{text-decoration:underline}
+.lab.sel .hl{opacity:1}
+.lab.sel text{fill:var(--paper);text-decoration:none}
+.lab.pin text{text-decoration:underline;text-decoration-thickness:2px}
+.lab.focus .ring{opacity:1}
+.lab .bt{fill:none;stroke:var(--ink);stroke-width:1.5}
+.lab .bt.p{fill:var(--ink)}
+.lab.sel .bt{stroke:var(--paper)}
+.lab.sel .bt.p{fill:var(--paper)}
+.src line,.src circle{stroke:var(--ink);stroke-width:1.25;fill:none}
+.src .srcline{stroke-dasharray:3 3}
+.src text{fill:var(--ink);font-weight:700;font-size:13px}
+.src text tspan{font-weight:400;fill:var(--mid)}
+.fieldmsg{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:18px;color:var(--mid);pointer-events:none;text-align:center;padding:24px}
+.caption{font-size:15px;min-height:3.2em;padding:10px 0 0;border-top:1px solid var(--ink);margin:6px 0 0}
+.caption b{margin-right:8px}
+.caption span{color:var(--mid)}
+
+/* Shortlist */
+.tray{display:none;flex-wrap:wrap;align-items:center;gap:8px 10px;border-top:3px solid var(--ink);margin-top:18px;padding:12px 0 0}
+.tray.on{display:flex}
+.tray>small{font-size:12px;color:var(--mid);margin-right:6px}
+.pill{display:inline-flex;align-items:stretch;border:1px solid var(--ink)}
+.pill .pw{background:none;border:0;padding:5px 8px 5px 10px;font-size:14px;font-weight:700;cursor:pointer}
+.pill .pw:hover{text-decoration:underline}
+.pill .px{background:none;border:0;border-left:1px solid var(--rule);padding:0 8px;cursor:pointer;font-size:13px;color:var(--mid)}
+.pill .px:hover{background:var(--ink);color:var(--paper)}
+.tray .copy{margin-left:auto}
+
+/* Detail panel */
+.detail{position:sticky;top:env(safe-area-inset-top,0px);align-self:start;max-height:100vh;overflow:auto;border-left:1px solid var(--ink);padding:16px 0 28px 24px}
+.dclose{display:none}
+.d-empty{font-size:16px;color:var(--mid);margin:4px 0 18px;max-width:30ch}
+.dw{font-size:52px;font-weight:700;letter-spacing:-.05em;line-height:.9;margin:0 0 8px;overflow-wrap:anywhere}
+.dmeta{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;font-size:13px;color:var(--mid);padding-bottom:12px;border-bottom:1px solid var(--ink)}
+.acts{display:flex;flex-wrap:wrap;gap:6px;padding:12px 0}
+.act{border:1px solid var(--ink);background:none;font-size:13px;padding:6px 10px;cursor:pointer}
+.act.primary{background:var(--ink);color:var(--paper);font-weight:700}
+.dsec{padding:12px 0;border-top:1px solid var(--rule)}
+.dsec>small{display:block;font-size:12px;color:var(--mid);margin-bottom:4px}
+.dsec p{margin:0;font-size:15px;max-width:40ch}
+.dnote{font-size:18px;line-height:1.3;letter-spacing:-.01em}
+.prow{display:grid;grid-template-columns:82px 44px minmax(0,1fr) 52px;gap:8px;align-items:center;font-size:12px;padding:3px 0}
+.prow .plab{font-weight:700}
+.prow .lo{color:var(--mid);text-align:right}
+.prow .hi{color:var(--mid)}
+.scale{position:relative;height:16px}
+.scale::before{content:"";position:absolute;left:0;right:0;top:50%;border-top:1px solid var(--rule)}
+.scale::after{content:"";position:absolute;left:50%;top:3px;bottom:3px;border-left:1px solid var(--rule)}
+.scale .pt,.scale .tick{position:absolute;top:50%;width:11px;height:11px;margin:-5.5px 0 0 -5.5px;z-index:1}
+.scale .pt{background:var(--ink)}
+.scale .tick{border:1.5px solid var(--ink);background:var(--paper)}
+.legend{display:flex;gap:14px;font-size:12px;color:var(--mid);margin-top:6px;align-items:center}
+.legend i{display:inline-block;width:9px;height:9px;margin-right:5px;vertical-align:-1px}
+.legend .a{background:var(--ink)}
+.legend .b{border:1.5px solid var(--ink)}
+.tags{display:flex;flex-wrap:wrap;gap:6px}
+.tag{border:1px solid var(--rule);padding:3px 8px;font-size:13px;background:none}
+button.tag{cursor:pointer;border-color:var(--ink)}
+button.tag:hover{background:var(--ink);color:var(--paper)}
+.dwait{color:var(--mid);font-size:14px}
+.senselist{margin:0;padding:0;list-style:none}
+.senselist li{padding:6px 0;border-top:1px solid var(--faint);font-size:15px}
+
+/* Path */
+.trail{display:flex;flex-wrap:wrap;gap:6px 18px;align-items:baseline;padding:14px 0 0;border-top:1px solid var(--ink);margin-top:30px;font-size:14px}
+.trail small{color:var(--mid);font-size:12px}
+.trail button{background:none;border:0;padding:0;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.trail button[aria-current="true"]{font-weight:700;text-decoration:none}
+.trail sup{font-size:10px;color:var(--mid);margin-right:3px}
+.empty{padding:28px 0;font-size:17px;max-width:46ch}
+
+/* Narrow screens */
+@media (max-width:899px){
+  .top{padding:14px 16px 0}
+  .brand{flex-direction:column;gap:4px}
+  .thesis{font-size:13px;text-align:left}
+  .actionrow{gap:12px}
+  .actionrow .go{width:100%}
+  .stage{grid-template-columns:minmax(0,1fr);padding:0 16px 40px}
+  .detail{position:fixed;left:0;right:0;bottom:0;top:auto;max-height:78vh;border-left:0;border-top:3px solid var(--ink);background:var(--paper);padding:14px 16px calc(24px + env(safe-area-inset-bottom,0px));transform:translateY(105%);visibility:hidden;transition:transform .28s ease,visibility 0s linear .28s;z-index:20}
+  body.sheet-open .detail{transform:none;visibility:visible;transition:transform .28s ease}
+  .dclose{display:block;position:absolute;right:12px;top:10px;background:none;border:1px solid var(--ink);font-size:13px;padding:5px 10px;cursor:pointer}
+  .dw{font-size:42px;padding-right:70px}
+  .d-idle{display:none}
+}
+@media (prefers-reduced-motion: reduce){
+  body.busy .busybar::after{animation:none;left:0;width:100%;opacity:.3}
+  .detail{transition:none}
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="brand">
+    <span class="mark">Nearly</span>
+    <span class="thesis">No two words mean exactly the same thing.</span>
+  </div>
+  <div class="busybar" aria-hidden="true"></div>
+</header>
+
+<main class="stage">
+  <section class="primary">
+    <div class="hero" id="hero"></div>
+    <p class="status" id="status" role="status" aria-live="polite"></p>
+    <div class="ctl" id="ctl"></div>
+    <div class="field" id="fieldwrap">
+      <svg id="fieldsvg" role="group" aria-label="Alternatives plotted on two scales"></svg>
+      <div class="fieldmsg" id="fieldmsg"></div>
+    </div>
+    <p class="caption" id="caption" aria-live="polite"></p>
+    <div class="tray" id="tray" aria-label="Shortlist"></div>
+    <footer class="trail" id="trail" aria-label="Your path"></footer>
+  </section>
+  <aside class="detail" id="detail" aria-label="Word detail"></aside>
+</main>
+
+<script>
+(() => {
+'use strict';
+
+/* ---------- Dimensions and lenses ---------- */
+const DIMS = {
+  fresh:{label:'Freshness', lo:'Worn', hi:'Fresh'},
+  fit:{label:'Fit', lo:'Weak fit', hi:'Strong fit'},
+  reg:{label:'Register', lo:'Plain', hi:'Elevated'},
+  temp:{label:'Temperature', lo:'Cool', hi:'Warm'},
+  int:{label:'Intensity', lo:'Softer', hi:'Stronger'},
+  conc:{label:'Texture', lo:'Abstract', hi:'Concrete'},
+  syl:{label:'Length', lo:'Shorter', hi:'Longer'}
+};
+const LENSES = {
+  fit:{name:'Fresh \u00D7 fit', x:'fresh', y:'fit', hint:'The prize corner is top right: words that fit and haven\u2019t been worn out.'},
+  tone:{name:'Tone', x:'reg', y:'temp', hint:'Where each word sits against the original: plainer or more elevated, cooler or warmer.'},
+  sound:{name:'Sound', x:'syl', y:'fit', beats:true, hint:'Fit against length, with each word\u2019s beat. Tall block = the stressed syllable.'}
+};
+const PROFILE = ['reg','temp','int','conc','fresh'];
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+
+/* ---------- Example map, so the page works before any lookup ---------- */
+const SEED = {
+  query:{word:'quiet', line:'The quiet confidence of a well-made thing.', intent:''},
+  head:{w:'quiet', pos:'adjective', ipa:'ˈkwaɪət', stress:'10', reg:0, int:0, temp:10, conc:0, fresh:-10,
+    senses:[{id:'s1',g:'Making little or no sound'},{id:'s2',g:'Calm and free from activity'},{id:'s3',g:'Understated, not showy'},{id:'s4',g:'Discreet or kept private'}],
+    lineSense:'s3'},
+  alts:[
+    ['understated','s3','adjective','ˌʌndəˈsteɪtɪd','2010',30,-10,0,-40,-20,88,'Precise, but it explains the effect instead of letting it happen.'],
+    ['unhurried','s2','adjective','ʌnˈhʌrid','010',30,0,30,0,60,82,'Adds time and craft. The most specific option for something well made.'],
+    ['composed','s2','adjective','kəmˈpəʊzd','01',30,10,-10,-30,10,80,'Self-possessed and close to the intent, slightly formal.'],
+    ['restrained','s3','adjective','rɪˈstreɪnd','01',40,20,-30,-30,0,78,'Implies power held back. More tension than quiet.'],
+    ['measured','s3','adjective','ˈmeʒəd','10',40,10,-20,-30,10,76,'Deliberate and adult. Leans corporate if used often.'],
+    ['patient','s2','adjective','ˈpeɪʃənt','10',0,0,40,-20,60,74,'Suggests the making took time. Unexpected, and it earns its place.'],
+    ['unfussy','s3','adjective','ʌnˈfʌsi','010',-30,0,20,10,50,73,'Craft-shop language. Honest, a little homely.'],
+    ['still','s2','adjective','stɪl','1',10,10,-20,10,40,72,'Adds weight and permanence. Can be misread as yet.'],
+    ['calm','s2','adjective','kɑːm','1',-30,-10,20,0,0,70,'Warmer and more human. Moves from the object to a mood.'],
+    ['unassuming','s3','adjective','ˌʌnəˈsjuːmɪŋ','2010',30,-20,30,-50,10,68,'Likeable, but long and a touch self-deprecating.'],
+    ['discreet','s4','adjective','dɪˈskriːt','01',40,0,-10,-30,-10,66,'Borrowed from luxury and banking. Suggests secrecy.'],
+    ['soft-spoken','s3','adjective','ˌsɒftˈspəʊkən','210',10,-30,50,30,50,64,'Gives the object a voice. Warm, slightly human.'],
+    ['modest','s3','adjective','ˈmɒdɪst','10',0,-30,40,-20,-10,62,'Humble rather than assured. Undercuts the confidence.'],
+    ['muted','s3','adjective','ˈmjuːtɪd','10',20,-10,-20,30,20,60,'Borrowed from colour. Reads as toned down, not self-possessed.'],
+    ['plain','s3','adjective','pleɪn','1',-50,10,-10,30,30,58,'Blunt and honest. Risks sounding like a lack of design.'],
+    ['hushed','s1','adjective','hʌʃt','1',20,20,0,40,40,55,'Theatrical. Suggests an audience holding its breath.'],
+    ['reticent','s4','adjective','ˈretɪsənt','100',70,10,-40,-50,50,52,'Clever, but reads as reluctant. Some readers will misread it.'],
+    ['low-key','s4','adjective','ˌləʊˈkiː','21',-60,-20,20,-20,-20,50,'Too casual for well-made. Sounds like a shrug.'],
+    ['gentle','s2','adjective','ˈdʒentl','10',-20,-30,60,0,-20,48,'Warm but soft. Confidence wants a firmer word.'],
+    ['silent','s1','adjective','ˈsaɪlənt','10',0,50,-40,20,-30,45,'Too absolute. Confidence that says nothing reads as cold.'],
+    ['serene','s2','adjective','səˈriːn','01',50,10,10,-40,-40,40,'Spa vocabulary. Worn, and too spiritual for an object.'],
+    ['noiseless','s1','adjective','ˈnɔɪzləs','10',20,30,-50,40,30,38,'Technical. Reads like a product spec for a dishwasher.'],
+    ['peaceful','s2','adjective','ˈpiːsfl','10',-10,-10,40,-20,-40,35,'Pleasant and vague. Softens the line into nothing.'],
+    ['tranquil','s2','adjective','ˈtræŋkwɪl','10',50,0,0,-20,-50,30,'Describes a lake, not a thing. Brochure language.']
+  ].map(r => ({w:r[0], sense:r[1], pos:r[2], ipa:r[3], stress:r[4], reg:r[5], int:r[6], temp:r[7], conc:r[8], fresh:r[9], fit:r[10],
+    ctx:`The ${r[0]} confidence of a well-made thing.`, note:r[11]}))
+};
+
+/* ---------- State ---------- */
+const keyOf = (w, l, i) => [w, l, i].map(x => (x || '').trim().toLowerCase()).join('|');
+const SEED_KEY = keyOf(SEED.query.word, SEED.query.line, SEED.query.intent);
+const state = {
+  query:{...SEED.query}, head:{...SEED.head}, alts:SEED.alts.map(a => ({...a})),
+  loading:false, lens:'fit', hidden:new Set(), selected:null, shortlist:[],
+  trail:[{key:SEED_KEY, w:'quiet'}], currentKey:SEED_KEY, pending:null, editing:false, draft:''
+};
+const cache = new Map([[SEED_KEY, snapshot()]]);
+const details = new Map();
+const fieldPos = new Map();
+
+/* ---------- Claude, however this page is being served ----------
+   Inside Claude the page asks Claude directly. Served from Vercel it posts to
+   /api/map, which holds the API key. Opened as a plain file it does neither and
+   the example map still works. */
+const API_URL = '/api/map';
+const engine = {mode:'none', ready:false, checked:false, code:null, needsCode:false};
+try { engine.code = localStorage.getItem('nearly.code') || null; } catch (e) {}
+const engErr = (code, message) => ({code, message: message || code});
+function parseLoose(t) {
+  const tryP = x => { try { return JSON.parse(x); } catch (e) { return undefined; } };
+  let v = tryP(t.trim());
+  if (v !== undefined) return v;
+  const fence = t.match(/```(?:json)?\s*([\s\S]*?)```/);
+  if (fence) { v = tryP(fence[1].trim()); if (v !== undefined) return v; }
+  const a = t.search(/[{\[]/), b = Math.max(t.lastIndexOf('}'), t.lastIndexOf(']'));
+  if (a >= 0 && b > a) { v = tryP(t.slice(a, b + 1)); if (v !== undefined) return v; }
+  throw Object.assign(engErr('invalid_json'), {text:t});
+}
+async function apiCall(prompt, opts) {
+  const {signal, onText, modelTier} = opts || {};
+  let res;
+  try {
+    res = await fetch(API_URL, {
+      method:'POST', signal,
+      headers: Object.assign({'content-type':'application/json'}, engine.code ? {'x-access-code':engine.code} : {}),
+      body: JSON.stringify({prompt, modelTier: modelTier || 'default'})
+    });
+  } catch (e) {
+    throw engErr(signal && signal.aborted ? 'cancelled' : 'upstream_error');
+  }
+  if (!res.ok || !res.body) {
+    let code = res.status === 429 ? 'rate_limited' : res.status === 401 ? 'unauthorised' : 'upstream_error';
+    try { const j = await res.json(); if (j && j.code) code = j.code; } catch (e) {}
+    if (code === 'unauthorised') engine.needsCode = true;
+    throw engErr(code);
+  }
+  const reader = res.body.getReader(), dec = new TextDecoder();
+  let text = '';
+  for (;;) {
+    let r;
+    try { r = await reader.read(); }
+    catch (e) { throw Object.assign(engErr(signal && signal.aborted ? 'cancelled' : 'upstream_error'), {text}); }
+    if (r.done) break;
+    const delta = dec.decode(r.value, {stream:true});
+    if (delta) { text += delta; if (onText) onText({text, delta}); }
+  }
+  if (!text.trim()) throw engErr('empty_completion');
+  return {text, truncated:false};
+}
+engine.stream = (prompt, opts) => engine.mode === 'claude' ? engine.sample(prompt, opts) : apiCall(prompt, opts);
+engine.json = async (prompt, opts) => {
+  if (engine.mode === 'claude') return engine.sample.json(prompt, opts);
+  const {text} = await apiCall(prompt, opts);
+  return parseLoose(text);
+};
+async function initEngine() {
+  try {
+    if (window.claude && typeof window.claude.use === 'function') {
+      const sp = await window.claude.use('sample');
+      if (sp) { engine.mode = 'claude'; engine.sample = sp; engine.ready = true; }
+    }
+  } catch (e) {}
+  if (!engine.ready && /^https?:$/.test(location.protocol)) {
+    try {
+      const r = await fetch(API_URL, {method:'GET'});
+      if (r.ok) {
+        const j = await r.json();
+        if (j && j.ready) { engine.mode = 'api'; engine.ready = true; engine.needsCode = !!j.protected && !engine.code; }
+      }
+    } catch (e) {}
+  }
+  engine.checked = true;
+  if (!state.loading) idleStatus();
+}
+
+/* ---------- DOM helpers ---------- */
+const $ = id => document.getElementById(id);
+const $hero = $('hero'), $status = $('status'),
+      $ctl = $('ctl'), $wrap = $('fieldwrap'), $svg = $('fieldsvg'), $msg = $('fieldmsg'),
+      $cap = $('caption'), $tray = $('tray'), $detail = $('detail'), $trail = $('trail');
+const $i = (() => {
+  const e = document.createElement('input');
+  e.setAttribute('autocomplete', 'off'); e.setAttribute('maxlength', '120');
+  e.setAttribute('placeholder', 'expensive, not smug'); e.setAttribute('enterkeyhint', 'go');
+  return e;
+})();
+function h(tag, props, ...kids) {
+  const e = document.createElement(tag);
+  for (const [k, v] of Object.entries(props || {})) {
+    if (v == null || v === false) continue;
+    if (k === 'class') e.className = v;
+    else if (k.startsWith('on') && typeof v === 'function') e.addEventListener(k.slice(2), v);
+    else e.setAttribute(k, v === true ? '' : v);
+  }
+  for (const c of kids.flat()) {
+    if (c == null || c === false) continue;
+    e.append(c.nodeType ? c : document.createTextNode(String(c)));
+  }
+  return e;
+}
+const SVGNS = 'http://www.w3.org/2000/svg';
+function s(tag, attrs) {
+  const e = document.createElementNS(SVGNS, tag);
+  for (const [k, v] of Object.entries(attrs || {})) e.setAttribute(k, v);
+  return e;
+}
+const letters = w => (w || '').replace(/[^\p{L}]/gu, '').length;
+const q = t => `\u201C${t}\u201D`;
+const sylOf = o => (o.stress && o.stress.length) || ((o.w || '').toLowerCase().match(/[aeiouy]+/g) || ['a']).length;
+const val = (o, d) => d === 'syl' ? sylOf(o) : o[d];
+function beat(stress) {
+  const words = [...stress].map(c => c === '1' ? 'DUM' : 'da').join(' ');
+  const b = h('span', {class:'beat', role:'img', 'aria-label':`Beat: ${words}`, title:words});
+  for (const c of stress) b.append(h('i', {class: c === '1' ? 'p' : c === '2' ? 's' : 'u'}));
+  return b;
+}
+function lineOk() {
+  const {line} = state.query;
+  return !!line && line.toLowerCase().includes((state.head.w || '').toLowerCase());
+}
+function diffMark(orig, next) {
+  let i = 0;
+  while (i < orig.length && i < next.length && orig[i] === next[i]) i++;
+  let j = 0;
+  while (j < orig.length - i && j < next.length - i && orig[orig.length - 1 - j] === next[next.length - 1 - j]) j++;
+  let a = i, b = next.length - j;
+  const wordy = /[\p{L}'\u2019-]/u;
+  while (a > 0 && wordy.test(next[a - 1])) a--;
+  while (b < next.length && wordy.test(next[b])) b++;
+  const frag = document.createDocumentFragment();
+  if (b <= a) { frag.append(next); return frag; }
+  frag.append(next.slice(0, a), h('b', {class:'in'}, next.slice(a, b)), next.slice(b));
+  return frag;
+}
+function snapshot() {
+  return {query:{...state.query}, head:{...state.head, senses:(state.head.senses || []).map(x => ({...x}))}, alts:state.alts.map(a => ({...a}))};
+}
+async function copyText(t, btn) {
+  let ok = false;
+  try { await navigator.clipboard.writeText(t); ok = true; } catch (e) {
+    try {
+      const ta = h('textarea', {style:'position:fixed;opacity:0;left:-9999px'}); ta.value = t;
+      document.body.append(ta); ta.select(); ok = document.execCommand('copy'); ta.remove();
+    } catch (e2) { ok = false; }
+  }
+  if (btn) { const old = btn.textContent; btn.textContent = ok ? 'Copied' : 'Copy failed'; setTimeout(() => { btn.textContent = old; }, 1300); }
+}
+
+/* ---------- Status ---------- */
+function setStatus(text, extra) {
+  $status.textContent = '';
+  if (text) $status.append(h('span', {}, text));
+  if (extra) $status.append(extra);
+}
+function idleStatus() {
+  if (state.pending) { setStatus('Tap the word you want to map.'); return; }
+  if (state.currentKey === SEED_KEY) {
+    setStatus(`An example to play with: ${q('quiet')} in a line about craft. Type over the line to map your own word.`);
+  } else {
+    setStatus(lineOk() ? 'Tap any word on the map to try it in your line, or any word in the line to map that instead.' : 'Tap any word on the map to see what it carries. Type over the word above to map another.');
+  }
+  if (engine.checked && !engine.ready) $status.append(h('span', {style:'color:var(--mid)'}, OFFLINE_NOTE));
+  else if (engine.needsCode) $status.append(codeForm());
+}
+const OFFLINE_NOTE = 'Mapping new words needs a connection to Claude, which this copy of the page doesn\u2019t have.';
+function codeForm(retry) {
+  const inp = h('input', {type:'password', placeholder:'Access code', 'aria-label':'Access code',
+    style:'border:0;border-bottom:1px solid var(--ink);background:transparent;font-size:14px;padding:2px 4px;width:120px'});
+  const save = () => {
+    const v = inp.value.trim();
+    if (!v) return;
+    engine.code = v; engine.needsCode = false;
+    try { localStorage.setItem('nearly.code', v); } catch (e) {}
+    if (retry) retry(); else idleStatus();
+  };
+  inp.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); save(); } });
+  return h('span', {style:'display:inline-flex;gap:8px;align-items:baseline'},
+    h('span', {style:'color:var(--mid)'}, 'This deployment is code-protected.'), inp,
+    h('button', {type:'button', class:'linkbtn', onclick:save}, 'Unlock'));
+}
+function loadingStatus() {
+  const n = state.alts.length;
+  const txt = n ? `Mapping ${q(state.head.w)}: ${n} ${n === 1 ? 'word' : 'words'} placed so far.` : `Mapping ${q(state.head.w)}. Words appear as Claude places them.`;
+  setStatus(txt, h('button', {class:'linkbtn', type:'button', onclick:() => { if (ctl) ctl.abort(); }}, 'Stop'));
+}
+const ERR = {
+  not_granted:'Claude access was declined for this page. Reload to be asked again.',
+  unauthorised:'That access code wasn\u2019t right.',
+  no_key:'The server has no ANTHROPIC_API_KEY set. Add one in your Vercel project settings.',
+  invalid_json:'The answer came back in the wrong shape. Try again.',
+  sampling_disabled:'Claude isn\u2019t available on this account.',
+  rate_limited:'Too many requests at once. Wait a moment, then map again.',
+  session_expired:'Your Claude session has ended. Sign in again, then retry.',
+  refused:'Claude declined to map this. Try a different word.',
+  prompt_too_large:'The line is too long. Shorten it and try again.',
+  empty_completion:'The map came back empty. Try again or try a different word.'
+};
+
+/* ---------- Lookup ---------- */
+let ctl = null;
+function buildPrompt(word, line, intent, has) {
+  const ctxLine = line
+    ? (has ? `It sits in this line of copy: "${line}"` : `The writer's line is: "${line}". The word does not appear in it, so use the line only for tone and subject, and set every ctx to "".`)
+    : 'No line is given: judge fit for general advertising copy and set every ctx to "".';
+  return [
+    `You are a lexicographer and a senior copywriter. Map the word "${word}" for someone choosing the right word in copy.`,
+    ctxLine,
+    intent ? `The writer wants the word to feel: ${intent}` : '',
+    '',
+    'Reply as JSON Lines: one JSON object per line, nothing else, no code fences.',
+    'Line 1 describes the head word, in this shape:',
+    '{"t":"head","w":"quiet","pos":"adjective","ipa":"ˈkwaɪət","stress":"10","reg":0,"int":0,"temp":10,"conc":0,"fresh":-10,"senses":[{"id":"s1","g":"Making little or no sound"}],"lineSense":"s1"}',
+    'Then 20 to 24 alternatives, best fit first, one per line, in this shape:',
+    '{"t":"alt","w":"hushed","sense":"s1","pos":"adjective","ipa":"hʌʃt","stress":"1","reg":20,"int":20,"temp":0,"conc":40,"fresh":40,"fit":55,"ctx":"...the full line with the alternative in place...","note":"..."}',
+    '',
+    'Fields:',
+    '- senses: 2 to 5 genuinely distinct senses of the head word, each gloss under 8 words, sentence case. lineSense is the id of the sense used in the line, or null.',
+    '- pos: part of speech in this sense.',
+    '- ipa: British English pronunciation, no slashes.',
+    '- stress: one digit per syllable. 1 primary stress, 2 secondary, 0 unstressed.',
+    '- reg: register, -100 plain or colloquial, 100 elevated or literary.',
+    '- int: intensity relative to the head word, which is 0. -100 much softer, 100 much stronger.',
+    '- temp: emotional temperature, -100 cold or clinical, 100 warm or intimate.',
+    '- conc: -100 abstract, 100 concrete or sensory.',
+    '- fresh: -100 worn out or cliched in advertising, 100 fresh and unexpected in copy.',
+    '- fit: 0 to 100, how well it serves the line and the stated feeling, or general copy if there is no line.',
+    '- ctx: the complete line with the alternative swapped in, inflected, with articles adjusted so it reads correctly.',
+    '- note: under 14 words. What this word adds or loses compared with the head word. Plain, specific, no hype.',
+    '',
+    'Cover every sense. Include close synonyms and a few lateral choices a strong copywriter would consider. Score each word on its own merits; the example values show format only. Use British spelling. Never repeat the head word or list a word twice. Do not use em dashes.'
+  ].filter(x => x !== null).join('\n');
+}
+function num(v, lo, hi, d) { v = Number(v); return Number.isFinite(v) ? clamp(Math.round(v), lo, hi) : d; }
+function cleanHead(o, word) {
+  const senses = Array.isArray(o.senses) ? o.senses.slice(0, 6).map((x, k) => ({id:String(x.id || `s${k + 1}`), g:String(x.g || x.gloss || '').slice(0, 80)})).filter(x => x.g) : [];
+  return {
+    w: word, pos: o.pos ? String(o.pos).slice(0, 30) : '', ipa: o.ipa ? String(o.ipa).replace(/\//g, '').slice(0, 40) : '',
+    stress: String(o.stress || '').replace(/[^012]/g, '').slice(0, 8), reg:num(o.reg, -100, 100, 0), int:0,
+    temp:num(o.temp, -100, 100, 0), conc:num(o.conc, -100, 100, 0), fresh:num(o.fresh, -100, 100, 0),
+    senses, lineSense: o.lineSense ? String(o.lineSense) : null
+  };
+}
+function cleanAlt(o) {
+  const w = String(o.w || '').trim().slice(0, 40);
+  if (!w) return null;
+  return {
+    w, sense:String(o.sense || ''), pos:o.pos ? String(o.pos).slice(0, 30) : '',
+    ipa:o.ipa ? String(o.ipa).replace(/\//g, '').slice(0, 40) : '', stress:String(o.stress || '').replace(/[^012]/g, '').slice(0, 8),
+    reg:num(o.reg, -100, 100, 0), int:num(o.int, -100, 100, 0), temp:num(o.temp, -100, 100, 0), conc:num(o.conc, -100, 100, 0),
+    fresh:num(o.fresh, -100, 100, 0), fit:num(o.fit, 0, 100, 50), ctx:o.ctx ? String(o.ctx).slice(0, 300) : '', note:o.note ? String(o.note).slice(0, 160) : ''
+  };
+}
+async function lookup(word, line, intent) {
+  word = (word || '').trim().replace(/\s+/g, ' ');
+  line = (line || '').trim();
+  intent = (intent || '').trim();
+  if (!word) { setStatus('Type a word to map.'); startEdit(true); return; }
+  state.pending = null; state.editing = false;
+  $i.value = intent;
+  const key = keyOf(word, line, intent);
+  if (ctl) { ctl.abort(); ctl = null; }
+  if (cache.has(key)) { loadSnapshot(cache.get(key), key); return; }
+  if (!engine.ready) {
+    setStatus(engine.checked ? OFFLINE_NOTE : 'Still connecting. Try again in a moment.');
+    return;
+  }
+  if (engine.needsCode) { setStatus('Enter the access code to map words.', codeForm(() => lookup(word, line, intent))); return; }
+  const has = !!line && line.toLowerCase().includes(word.toLowerCase());
+  state.query = {word, line, intent};
+  state.head = {w:word};
+  state.alts = []; state.selected = null; state.hidden.clear(); state.loading = true; state.currentKey = key;
+  fieldPos.clear();
+  document.body.classList.add('busy');
+  renderAll(); loadingStatus();
+  if (window.matchMedia('(max-width: 899px)').matches) $hero.scrollIntoView({block:'start', behavior:'smooth'});
+
+  const my = new AbortController(); ctl = my;
+  let pending = '';
+  const ingest = raw => {
+    let t = raw.trim().replace(/,$/, '');
+    if (!t.startsWith('{')) return;
+    let o; try { o = JSON.parse(t); } catch (e) { return; }
+    if (o.t === 'head' || Array.isArray(o.senses)) { state.head = cleanHead(o, word); return; }
+    const a = cleanAlt(o);
+    if (!a) return;
+    const lw = a.w.toLowerCase();
+    if (lw === word.toLowerCase() || state.alts.some(x => x.w.toLowerCase() === lw)) return;
+    state.alts.push(a);
+  };
+  try {
+    await engine.stream(buildPrompt(word, line, intent, has), {
+      signal: my.signal,
+      onText: ({delta}) => {
+        if (ctl !== my) return;
+        const parts = (pending + delta).split('\n');
+        pending = parts.pop();
+        parts.forEach(ingest);
+        scheduleRender();
+      }
+    });
+    if (pending.trim()) ingest(pending);
+    finish(my, key, null);
+  } catch (e) {
+    if (pending.trim()) ingest(pending);
+    finish(my, key, e);
+  }
+}
+function finish(my, key, err) {
+  if (ctl !== my) return;
+  ctl = null; state.loading = false;
+  document.body.classList.remove('busy');
+  if (!err && state.alts.length > 0) cache.set(key, snapshot());
+  if (state.alts.length) addTrail(key, state.head.w);
+  renderAll();
+  if (!err) {
+    if (state.alts.length) idleStatus(); else setStatus(ERR.empty_completion);
+  } else if (err.code === 'cancelled') {
+    setStatus(state.alts.length ? 'Stopped. Showing the words that had arrived.' : 'Stopped.');
+  } else {
+    const msg = ERR[err.code] || 'The map was interrupted before it finished. Try again.';
+    setStatus(state.alts.length ? `${msg} Showing the words that arrived.` : msg,
+      err.code === 'unauthorised' ? codeForm(() => lookup(state.query.word, state.query.line, state.query.intent)) : null);
+  }
+}
+function loadSnapshot(snap, key) {
+  state.query = {...snap.query};
+  state.head = {...snap.head};
+  state.alts = snap.alts.map(a => ({...a}));
+  state.selected = null; state.hidden.clear(); state.loading = false; state.currentKey = key; state.pending = null; state.editing = false;
+  document.body.classList.remove('busy');
+  fieldPos.clear();
+  state.editing = false; $i.value = state.query.intent;
+  addTrail(key, state.head.w);
+  renderAll(); idleStatus();
+}
+function addTrail(key, w) {
+  const last = state.trail[state.trail.length - 1];
+  if (last && last.key === key) return;
+  state.trail.push({key, w});
+  if (state.trail.length > 16) state.trail.shift();
+}
+let rafPending = false;
+function scheduleRender() {
+  if (rafPending) return;
+  rafPending = true;
+  requestAnimationFrame(() => {
+    rafPending = false;
+    renderHero(); renderControls(); drawField(true);
+    if (state.loading) loadingStatus();
+  });
+}
+
+/* ---------- Detail fetch ---------- */
+function detailKey(a) { return `${a.w}|${state.head.w}|${lineOk() ? state.query.line : ''}`.toLowerCase(); }
+async function loadDetail(a) {
+  const k = detailKey(a);
+  if (details.has(k) && !details.get(k).error) return;
+  if (!engine.ready) { details.set(k, {error:'unavailable'}); return; }
+  details.set(k, {loading:true});
+  const inLine = lineOk() && a.ctx ? ` in the line "${a.ctx}"` : '';
+  const prompt = [
+    `You are a lexicographer helping a copywriter. The word is "${a.w}"${a.pos ? ` (${a.pos})` : ''}, considered as an alternative to "${state.head.w}"${inLine}.`,
+    'Reply with only one JSON object in this shape:',
+    '{"def":"","conn":"","use":"","avoid":"","worn":[],"opp":[]}',
+    '- def: plain definition in the relevant sense, under 16 words.',
+    '- conn: what the word implies beyond its definition, under 22 words.',
+    '- use: when it is the right choice, under 16 words.',
+    '- avoid: when it is the wrong choice, under 16 words.',
+    '- worn: up to 3 short phrases where this word has become cliched in advertising. Empty list if none.',
+    '- opp: 2 to 4 single-word opposites.',
+    'British spelling. Plain and specific. No em dashes.'
+  ].join('\n');
+  try {
+    const d = await engine.json(prompt, {modelTier:'quick'});
+    details.set(k, {data: d && typeof d === 'object' ? d : {}});
+  } catch (e) {
+    details.set(k, {error: e && e.code ? e.code : 'upstream_error'});
+  }
+  const cur = state.alts.find(x => x.w === state.selected);
+  if (cur && detailKey(cur) === k) renderDetail();
+}
+
+/* ---------- Actions ---------- */
+function select(w) {
+  state.selected = state.selected === w ? null : w;
+  renderHero(); renderDetail(); drawField(false);
+  const a = state.alts.find(x => x.w === state.selected);
+  if (a) {
+    const k = detailKey(a);
+    if (!details.has(k) || details.get(k).error) { loadDetail(a); renderDetail(); }
+  }
+  if (!a) idleStatus();
+}
+function deselect() { if (state.selected) select(state.selected); }
+function toggleShortlist(w) {
+  const i = state.shortlist.findIndex(p => p.w === w);
+  if (i >= 0) state.shortlist.splice(i, 1);
+  else {
+    const a = state.alts.find(x => x.w === w);
+    if (!a) return;
+    if (state.shortlist.length >= 7) state.shortlist.shift();
+    state.shortlist.push({w:a.w, ctx:a.ctx, of:state.head.w});
+  }
+  renderTray(); renderDetail(); drawField(false);
+}
+function mapWord(a) {
+  const line = lineOk() && a.ctx ? a.ctx : state.query.line;
+  lookup(a.w, line, state.query.intent);
+}
+function mapPlain(w) { lookup(w, state.query.line, state.query.intent); }
+
+/* ---------- Render: hero ---------- */
+function heroText() {
+  return state.pending || (lineOk() ? state.query.line : (state.head.w || ''));
+}
+function heroSize(text) {
+  const avail = Math.max(240, $hero.clientWidth || 600);
+  const len = Math.max(3, (text || '').trim().length);
+  const maxH = clamp(window.innerHeight * 0.3, 150, 260);
+  for (let S = 200; S > 24; S -= 2) {
+    const perLine = Math.max(1, Math.floor(avail / (S * 0.52)));
+    if (Math.ceil(len / perLine) * S * 1.12 <= maxH) return S;
+  }
+  return 24;
+}
+function startEdit(all) {
+  state.editing = true;
+  state.draft = heroText();
+  state.selected = null;
+  renderHero(); renderDetail(); idleStatus();
+  const ta = $hero.querySelector('.heroedit');
+  if (!ta) return;
+  ta.focus();
+  if (all) ta.select(); else ta.setSelectionRange(ta.value.length, ta.value.length);
+}
+function cancelEdit() { state.editing = false; renderHero(); idleStatus(); }
+function editor() {
+  const ta = h('textarea', {class:'heroedit', rows:'1', spellcheck:'false', autocapitalize:'off', autocomplete:'off',
+    'aria-label':'The word to map, or the line it lives in', placeholder:'Type a word', enterkeyhint:'go',
+    style:`--hs:${heroSize(state.draft || 'word')}px`});
+  ta.value = state.draft;
+  const grow = () => {
+    ta.style.setProperty('--hs', `${heroSize(ta.value || 'word')}px`);
+    ta.style.height = 'auto';
+    ta.style.height = `${ta.scrollHeight}px`;
+  };
+  ta.addEventListener('input', () => {
+    if (/[\n\t]/.test(ta.value)) { ta.value = ta.value.replace(/[\n\t]+/g, ' '); ta.setSelectionRange(ta.value.length, ta.value.length); }
+    state.draft = ta.value;
+    grow();
+  });
+  ta.addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); go(); }
+    else if (e.key === 'Escape') { e.preventDefault(); cancelEdit(); }
+  });
+  requestAnimationFrame(grow);
+  return ta;
+}
+function actionRow() {
+  return h('div', {class:'actionrow'},
+    h('button', {type:'button', class:'go', onclick:go}, 'Map it'),
+    h('label', {class:'fld intent'}, h('span', {}, 'It should feel (optional)'), $i),
+    h('span', {class:'hint'}, state.editing && (state.draft || '').trim().split(/\s+/).length > 1 ? 'You\u2019ll pick the word to map next.' : 'A word, or the whole line.'));
+}
+function tokenise(line, onTap, curWord) {
+  const p = h('p', {class:'heroline', style:`--hs:${heroSize(line)}px`});
+  let last = 0;
+  for (const m of line.matchAll(/[\p{L}'\u2019-]+/gu)) {
+    if (m.index > last) p.append(line.slice(last, m.index));
+    const word = m[0];
+    const isCur = curWord && word.toLowerCase() === curWord.toLowerCase();
+    p.append(h('button', {type:'button', class:'tok' + (isCur ? ' cur' : ''),
+      title: isCur ? 'The word being mapped' : 'Map this word instead',
+      'aria-current': isCur ? 'true' : null,
+      onclick:() => { if (!isCur) onTap(word); }}, word));
+    last = m.index + word.length;
+  }
+  if (last < line.length) p.append(line.slice(last));
+  return p;
+}
+function renderHero() {
+  document.body.classList.toggle('pending', !!state.pending);
+  $hero.textContent = '';
+  const hd = state.head;
+  if (state.editing) { $hero.append(editor(), actionRow()); return; }
+  if (state.pending) {
+    $hero.append(h('div', {class:'heroprompt'}, tokenise(state.pending, w => lookup(w, state.pending, $i.value), null)));
+    $hero.append(h('div', {class:'swapbar'},
+      h('button', {type:'button', class:'linkbtn', onclick:() => startEdit(false)}, 'Edit the line')));
+    return;
+  }
+  const sel = state.alts.find(x => x.w === state.selected);
+  if (lineOk()) {
+    if (sel && sel.ctx) {
+      $hero.append(h('p', {class:'heroline', style:`--hs:${heroSize(sel.ctx)}px`}, diffMark(state.query.line, sel.ctx)));
+      const cp = h('button', {type:'button', class:'copy'}, 'Copy this line');
+      cp.addEventListener('click', () => copyText(sel.ctx, cp));
+      $hero.append(h('div', {class:'swapbar'},
+        h('span', {}, h('b', {}, sel.w), sel.note ? ` ${sel.note}` : ''),
+        cp,
+        h('button', {type:'button', class:'linkbtn', onclick:deselect}, `Back to ${hd.w}`)));
+    } else {
+      $hero.append(tokenise(state.query.line, w => lookup(w, state.query.line, state.query.intent), hd.w));
+    }
+  } else {
+    $hero.append(h('p', {class:'heroline', style:`--hs:${heroSize(hd.w)}px`},
+      h('button', {type:'button', class:'heroword', title:'Type a different word', onclick:() => startEdit(true)}, hd.w || '')));
+    if (sel && sel.note) $hero.append(h('div', {class:'swapbar'}, h('span', {}, h('b', {}, sel.w), ` ${sel.note}`)));
+  }
+  const meta = h('div', {class:'meta'});
+  const bits = [];
+  if (hd.ipa) bits.push([`/${hd.ipa}/`]);
+  if (hd.stress) bits.push([beat(hd.stress)]);
+  if (hd.pos) bits.push([hd.pos]);
+  if (hd.senses && hd.senses.length > 1) bits.push([`${hd.senses.length} senses`]);
+  bits.push([`${state.alts.length} alternatives`]);
+  if (state.query.intent) bits.push([h('small', {}, 'Feels'), state.query.intent]);
+  for (const b of bits) meta.append(h('span', {}, ...b));
+  meta.append(h('span', {}, h('button', {type:'button', class:'linkbtn', onclick:() => startEdit(!lineOk())},
+    lineOk() ? 'Edit the line' : 'Map another word')));
+  $hero.append(meta);
+}
+
+/* ---------- Render: lens and sense controls ---------- */
+function chip(label, pressed, onclick, title) {
+  return h('button', {type:'button', class:'chip', 'aria-pressed':String(!!pressed), onclick, title}, label);
+}
+function renderControls() {
+  $ctl.textContent = '';
+  const g = h('div', {class:'grp'}, h('small', {}, 'Lens'));
+  for (const [id, L] of Object.entries(LENSES)) {
+    g.append(chip(L.name, state.lens === id, () => { state.lens = id; renderControls(); drawField(true); setCaption(null); }));
+  }
+  $ctl.append(g);
+  const senses = state.head.senses || [];
+  if (senses.length > 1) {
+    const sg = h('div', {class:'grp'}, h('small', {}, 'Senses'));
+    sg.append(chip('All', state.hidden.size === 0, () => { state.hidden.clear(); onFilter(); }));
+    senses.forEach(se => {
+      const shown = !state.hidden.has(se.id);
+      sg.append(chip(se.g, state.hidden.size > 0 && shown, () => {
+        if (state.hidden.size === 0) { senses.forEach(x => { if (x.id !== se.id) state.hidden.add(x.id); }); }
+        else if (shown) state.hidden.add(se.id); else state.hidden.delete(se.id);
+        if (senses.every(x => state.hidden.has(x.id))) state.hidden.clear();
+        onFilter();
+      }, se.id === state.head.lineSense && lineOk() ? 'The sense used in your line' : null));
+    });
+    $ctl.append(sg);
+  }
+}
+function onFilter() {
+  const a = state.alts.find(x => x.w === state.selected);
+  if (a && state.hidden.has(a.sense)) { state.selected = null; renderHero(); renderDetail(); }
+  renderControls(); drawField(true);
+}
+
+/* ---------- Render: field ---------- */
+let anim = null, lastW = 0;
+function drawField(animate) {
+  const W = Math.max(280, Math.round($wrap.clientWidth));
+  lastW = W;
+  const narrow = W < 560;
+  const H = Math.round(narrow ? W * 1.35 : Math.min(W * 0.62, 620));
+  const svg = $svg;
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  svg.setAttribute('width', W); svg.setAttribute('height', H);
+  svg.textContent = '';
+  const m = {l:30, r:12, t:12, b:34};
+  const P = {x:m.l, y:m.t, w:W - m.l - m.r, h:H - m.t - m.b};
+  const L = LENSES[state.lens], AX = L.x, AY = L.y;
+  const hd = state.head;
+  const domain = dim => {
+    if (dim === 'syl') {
+      const vals = state.alts.map(a => sylOf(a));
+      if (hd.w) vals.push(sylOf(hd));
+      if (!vals.length) return [0.5, 4.5, null];
+      let lo = Math.min(...vals), hi = Math.max(...vals);
+      if (hi - lo < 2) { const c = (hi + lo) / 2; lo = c - 1; hi = c + 1; }
+      return [lo - 0.6, hi + 0.6, null];
+    }
+    const bot = dim === 'fit' ? 0 : -100, top = 100, neutral = dim === 'fit' ? 50 : 0;
+    const vals = state.alts.map(a => a[dim]);
+    if (dim !== 'fit' && hd.senses && hd[dim] != null) vals.push(hd[dim]);
+    if (!vals.length) return [bot, top, neutral];
+    let lo = Math.min(...vals), hi = Math.max(...vals);
+    if (hi - lo < 40) { const c = (hi + lo) / 2; lo = c - 20; hi = c + 20; }
+    const pad = (hi - lo) * 0.07;
+    lo = clamp(lo - pad, bot, top); hi = clamp(hi + pad, bot, top);
+    return [lo, hi, neutral];
+  };
+  const [xlo, xhi, xn] = domain(AX), [ylo, yhi, yn] = domain(AY);
+  const px = v => P.x + ((v ?? ((xlo + xhi) / 2)) - xlo) / (xhi - xlo) * P.w;
+  const py = v => P.y + (1 - ((v ?? ((ylo + yhi) / 2)) - ylo) / (yhi - ylo)) * P.h;
+
+  const grid = s('g', {class:'grid'});
+  for (let i = 1; i < 10; i++) {
+    if (i === 5) continue;
+    const gx = P.x + P.w * i / 10, gy = P.y + P.h * i / 10;
+    grid.append(s('line', {x1:gx, x2:gx, y1:P.y, y2:P.y + P.h}), s('line', {x1:P.x, x2:P.x + P.w, y1:gy, y2:gy}));
+  }
+  svg.append(grid);
+  if (xn != null && xn > xlo && xn < xhi) svg.append(s('line', {class:'axis', x1:px(xn), x2:px(xn), y1:P.y, y2:P.y + P.h}));
+  if (yn != null && yn > ylo && yn < yhi) svg.append(s('line', {class:'axis', x1:P.x, x2:P.x + P.w, y1:py(yn), y2:py(yn)}));
+  svg.append(s('rect', {class:'frame', x:P.x, y:P.y, width:P.w, height:P.h}));
+  const t = (str, x, y, cls, anchor) => { const e = s('text', {x, y, class:cls, 'text-anchor':anchor}); e.textContent = str; svg.append(e); return e; };
+  const dX = DIMS[AX], dY = DIMS[AY];
+  t(dX.lo, P.x, H - 10, 'axlab', 'start');
+  t(dX.label, P.x + P.w / 2, H - 10, 'axname', 'middle');
+  t(dX.hi, P.x + P.w, H - 10, 'axlab', 'end');
+  const ty = (str, y, cls, anchor) => { const e = s('text', {class:cls, transform:`translate(${m.l - 10},${y}) rotate(-90)`, 'text-anchor':anchor}); e.textContent = str; svg.append(e); };
+  ty(dY.lo, P.y + P.h, 'axlab', 'start');
+  ty(dY.label, P.y + P.h / 2, 'axname', 'middle');
+  ty(dY.hi, P.y, 'axlab', 'end');
+  const lc = x => x.charAt(0).toLowerCase() + x.slice(1);
+  const fixed = [];
+  const corner = (str, x, y, anchor) => {
+    const e = t(str, x, y, 'corner', anchor);
+    const cw = e.getComputedTextLength();
+    fixed.push({x:anchor === 'end' ? x - cw - 2 : x - 2, y:y - 11, w:cw + 4, h:14, fixed:true});
+  };
+  corner(`${dY.hi}, ${lc(dX.lo)}`, P.x + 6, P.y + 14, 'start');
+  corner(`${dY.hi}, ${lc(dX.hi)}`, P.x + P.w - 6, P.y + 14, 'end');
+  corner(`${dY.lo}, ${lc(dX.lo)}`, P.x + 6, P.y + P.h - 7, 'start');
+  corner(`${dY.lo}, ${lc(dX.hi)}`, P.x + P.w - 6, P.y + P.h - 7, 'end');
+
+  // Original word marker
+  if (hd.senses) {
+    const g = s('g', {class:'src'});
+    const lab = s('text', {});
+    lab.textContent = hd.w; const sub = s('tspan', {}); sub.textContent = ' original'; lab.append(sub);
+    if (AY === 'fit') {
+      const sx = px(val(hd, AX));
+      g.append(s('line', {class:'srcline', x1:sx, x2:sx, y1:P.y, y2:P.y + P.h}));
+      lab.setAttribute('x', sx + 5); lab.setAttribute('y', P.y + P.h - 24);
+      g.append(lab); svg.append(g);
+      const bw = lab.getComputedTextLength();
+      fixed.push({x:sx + 3, y:P.y + P.h - 38, w:bw + 6, h:18, fixed:true});
+    } else {
+      const sx = px(val(hd, AX)), sy = py(val(hd, AY));
+      g.append(s('line', {x1:sx - 13, x2:sx + 13, y1:sy, y2:sy}), s('line', {x1:sx, x2:sx, y1:sy - 13, y2:sy + 13}), s('circle', {cx:sx, cy:sy, r:6}));
+      lab.setAttribute('x', sx + 9); lab.setAttribute('y', sy - 9);
+      g.append(lab); svg.append(g);
+      const bw = lab.getComputedTextLength();
+      fixed.push({x:sx - 14, y:sy - 23, w:bw + 26, h:37, fixed:true});
+    }
+  }
+
+  // Words
+  const scale = W < 420 ? 0.72 : W < 560 ? 0.8 : W < 900 ? 0.9 : 1;
+  const leaders = s('g', {}), dots = s('g', {}), labs = s('g', {});
+  svg.append(leaders, dots, labs);
+  const items = [];
+  const pinnedSet = new Set(state.shortlist.filter(p => p.of === hd.w).map(p => p.w));
+  for (const a of state.alts) {
+    const ax = px(val(a, AX)), ay = py(val(a, AY));
+    if (state.hidden.has(a.sense)) { dots.append(s('circle', {class:'dot ghost', cx:ax, cy:ay, r:2})); continue; }
+    const fs = Math.round((11 + a.fit * 0.19) * scale);
+    const g = s('g', {class:'lab' + (state.selected === a.w ? ' sel' : '') + (pinnedSet.has(a.w) ? ' pin' : ''), tabindex:'0', role:'button',
+      'aria-label':`${a.w}, fit ${a.fit}${a.note ? '. ' + a.note : ''}`, 'aria-pressed':String(state.selected === a.w)});
+    const hl = s('rect', {class:'hl'}), ring = s('rect', {class:'ring'});
+    const tx = s('text', {'font-size':fs, 'font-weight': a.fit >= 75 ? 700 : 400});
+    tx.textContent = a.w;
+    g.append(hl, ring, tx);
+    const glyph = [];
+    if (L.beats && a.stress) {
+      for (const c of a.stress) {
+        const r = s('rect', {class:'bt' + (c === '1' ? ' p' : ''), width:5, height:c === '1' ? 10 : 6});
+        glyph.push({r, hgt:c === '1' ? 10 : 6}); g.append(r);
+      }
+    }
+    labs.append(g);
+    const tw = tx.getComputedTextLength();
+    const gW = glyph.length ? glyph.length * 7 + 6 : 0;
+    const bh = Math.round(fs * 1.12) + 4, bw = tw + 8 + gW;
+    let bx = ax + 5, by = ay - bh / 2;
+    if (bx + bw > P.x + P.w) bx = ax - 5 - bw;
+    const dot = s('circle', {class:'dot', cx:ax, cy:ay, r:2.4});
+    const ld = s('line', {class:'leader'});
+    leaders.append(ld); dots.append(dot);
+    g.addEventListener('click', () => select(a.w));
+    g.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); select(a.w); } });
+    g.addEventListener('focus', () => { g.classList.add('focus'); setCaption(a); });
+    g.addEventListener('blur', () => { g.classList.remove('focus'); setCaption(null); });
+    g.addEventListener('mouseenter', () => setCaption(a));
+    g.addEventListener('mouseleave', () => setCaption(null));
+    items.push({a, g, hl, ring, tx, glyph, tw, dot, ld, fs, ax, ay, x:bx, y:by, w:bw, h:bh});
+  }
+
+  // Resolve overlaps
+  const all = items.concat(fixed);
+  const minX = P.x - 2, maxX = P.x + P.w + 2, minY = P.y - 2, maxY = P.y + P.h + 2;
+  for (let it = 0; it < 160; it++) {
+    let moved = false;
+    for (let i = 0; i < items.length; i++) {
+      const A = items[i];
+      for (let j = i + 1; j < all.length; j++) {
+        const B = all[j];
+        const ox = Math.min(A.x + A.w, B.x + B.w) - Math.max(A.x, B.x);
+        const oy = Math.min(A.y + A.h, B.y + B.h) - Math.max(A.y, B.y);
+        if (ox <= 0 || oy <= 0) continue;
+        moved = true;
+        if (oy <= ox * 1.8) {
+          const sg = (A.y + A.h / 2) <= (B.y + B.h / 2) ? -1 : 1;
+          if (B.fixed) A.y += sg * (oy + 0.5); else { A.y += sg * (oy / 2 + 0.25); B.y -= sg * (oy / 2 + 0.25); }
+        } else {
+          const sg = (A.x + A.w / 2) <= (B.x + B.w / 2) ? -1 : 1;
+          if (B.fixed) A.x += sg * (ox + 0.5); else { A.x += sg * (ox / 2 + 0.25); B.x -= sg * (ox / 2 + 0.25); }
+        }
+      }
+    }
+    for (const A of items) { A.x = clamp(A.x, minX, maxX - A.w); A.y = clamp(A.y, minY, maxY - A.h); }
+    if (!moved) break;
+  }
+
+  // Place, animating from the previous layout
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const place = (A, p) => {
+    A.hl.setAttribute('x', p.x); A.hl.setAttribute('y', p.y); A.hl.setAttribute('width', A.w); A.hl.setAttribute('height', A.h);
+    A.ring.setAttribute('x', p.x - 2); A.ring.setAttribute('y', p.y - 2); A.ring.setAttribute('width', A.w + 4); A.ring.setAttribute('height', A.h + 4);
+    A.tx.setAttribute('x', p.x + 4); A.tx.setAttribute('y', p.y + 2 + A.fs * 0.86);
+    A.glyph.forEach((gl, gi) => {
+      gl.r.setAttribute('x', p.x + 4 + A.tw + 7 + gi * 7);
+      gl.r.setAttribute('y', p.y + A.h - 4 - gl.hgt);
+    });
+    A.dot.setAttribute('cx', p.ax); A.dot.setAttribute('cy', p.ay);
+    const nx = clamp(p.ax, p.x, p.x + A.w), ny = clamp(p.ay, p.y, p.y + A.h);
+    const far = Math.hypot(nx - p.ax, ny - p.ay) > 7;
+    A.ld.setAttribute('x1', p.ax); A.ld.setAttribute('y1', p.ay); A.ld.setAttribute('x2', nx); A.ld.setAttribute('y2', ny);
+    A.ld.style.display = far ? '' : 'none';
+  };
+  if (anim) { cancelAnimationFrame(anim); anim = null; }
+  const targets = items.map(A => ({A, to:{x:A.x, y:A.y, ax:A.ax, ay:A.ay}, from:fieldPos.get(A.a.w)}));
+  const doAnim = animate && !reduce && targets.some(tg => tg.from && (Math.abs(tg.from.x - tg.to.x) + Math.abs(tg.from.y - tg.to.y) + Math.abs(tg.from.ax - tg.to.ax) + Math.abs(tg.from.ay - tg.to.ay) > 1));
+  targets.forEach(tg => { place(tg.A, doAnim && tg.from ? tg.from : tg.to); fieldPos.set(tg.A.a.w, tg.to); });
+  if (doAnim) {
+    const t0 = performance.now(), dur = 520;
+    const step = now => {
+      const k = clamp((now - t0) / dur, 0, 1), e = 1 - Math.pow(1 - k, 3);
+      targets.forEach(tg => {
+        if (!tg.from) return;
+        const f = tg.from, to = tg.to;
+        place(tg.A, {x:f.x + (to.x - f.x) * e, y:f.y + (to.y - f.y) * e, ax:f.ax + (to.ax - f.ax) * e, ay:f.ay + (to.ay - f.ay) * e});
+      });
+      anim = k < 1 ? requestAnimationFrame(step) : null;
+    };
+    anim = requestAnimationFrame(step);
+  }
+
+  $msg.textContent = state.loading && !state.alts.length ? `Thinking about ${q(hd.w)}. The first words usually land within a minute.` : '';
+  setCaption(null);
+}
+function setCaption(a) {
+  const cur = a || state.alts.find(x => x.w === state.selected);
+  $cap.textContent = '';
+  if (cur) $cap.append(h('b', {}, cur.w), h('span', {}, cur.note || ''));
+  else if (state.alts.length) {
+    const L = LENSES[state.lens];
+    $cap.append(h('span', {}, `Bigger, bolder words fit better. ${L.hint}`));
+  }
+}
+const ro = new ResizeObserver(() => {
+  const w = Math.round($wrap.clientWidth);
+  if (Math.abs(w - lastW) > 2) drawField(false);
+  const el = $hero.querySelector('.heroedit') || $hero.querySelector('.heroline');
+  if (el) {
+    const txt = el.classList.contains('heroedit') ? (el.value || 'word') : el.textContent;
+    el.style.setProperty('--hs', `${heroSize(txt)}px`);
+    if (el.classList.contains('heroedit')) { el.style.height = 'auto'; el.style.height = `${el.scrollHeight}px`; }
+  }
+});
+ro.observe(document.querySelector('.primary'));
+
+/* ---------- Render: shortlist tray ---------- */
+function renderTray() {
+  $tray.textContent = '';
+  const list = state.shortlist;
+  $tray.classList.toggle('on', list.length > 0);
+  if (!list.length) return;
+  $tray.append(h('small', {}, 'Shortlist'));
+  for (const p of list) {
+    $tray.append(h('span', {class:'pill'},
+      h('button', {type:'button', class:'pw', title:p.ctx || p.w, onclick:() => {
+        if (p.of === state.head.w) select(p.w); else { const snap = [...cache.values()].find(c => c.head.w === p.of); if (snap) { loadSnapshot(snap, keyOf(snap.query.word, snap.query.line, snap.query.intent)); select(p.w); } }
+      }}, p.w),
+      h('button', {type:'button', class:'px', 'aria-label':`Remove ${p.w} from shortlist`, onclick:() => toggleShortlist(p.w)}, '\u00D7')));
+  }
+  const cp = h('button', {type:'button', class:'copy'}, 'Copy list');
+  cp.addEventListener('click', () => copyText(list.map(p => p.ctx || p.w).join('\n'), cp));
+  $tray.append(cp);
+}
+
+/* ---------- Render: detail panel ---------- */
+function profRow(d, v, src) {
+  const nm = x => d === 'fit' ? ((x ?? 50) - 50) / 50 : (x ?? 0) / 100;
+  const pos = x => `${((nm(x) + 1) / 2 * 100).toFixed(1)}%`;
+  const sc = h('span', {class:'scale'});
+  if (src != null) sc.append(h('i', {class:'tick', style:`left:${pos(src)}`}));
+  sc.append(h('i', {class:'pt', style:`left:${pos(v)}`}));
+  return h('div', {class:'prow', role:'img', 'aria-label':`${DIMS[d].label}: ${v}${src != null ? `, original ${src}` : ''}`},
+    h('span', {class:'plab'}, DIMS[d].label), h('span', {class:'lo'}, DIMS[d].lo), sc, h('span', {class:'hi'}, DIMS[d].hi));
+}
+function renderDetail() {
+  $detail.textContent = '';
+  const a = state.alts.find(x => x.w === state.selected);
+  document.body.classList.toggle('sheet-open', !!a);
+  if (!a) {
+    const hd = state.head;
+    const box = h('div', {class:'d-idle'});
+    box.append(h('p', {class:'d-empty'}, lineOk() ? 'Tap a word on the map to try it in your line and see what it carries.' : 'Tap a word on the map to see what it carries.'));
+    if (hd.senses && hd.senses.length > 1) {
+      const ul = h('ul', {class:'senselist'});
+      hd.senses.forEach(se => ul.append(h('li', {}, se.g, se.id === hd.lineSense && lineOk() ? h('b', {}, '  (your line)') : null)));
+      box.append(h('div', {class:'dsec'}, h('small', {}, `Senses of ${hd.w}`), ul));
+    }
+    $detail.append(box);
+    return;
+  }
+  const hd = state.head;
+  const listed = state.shortlist.some(p => p.w === a.w && p.of === hd.w);
+  $detail.append(h('button', {type:'button', class:'dclose', onclick:deselect}, 'Close'));
+  $detail.append(h('h2', {class:'dw'}, a.w));
+  $detail.append(h('div', {class:'dmeta'},
+    a.pos ? h('span', {}, a.pos) : null, a.ipa ? h('span', {}, `/${a.ipa}/`) : null,
+    a.stress ? beat(a.stress) : null, h('span', {}, `${letters(a.w)} letters`), h('span', {}, `Fit ${a.fit}`)));
+  const cp = h('button', {type:'button', class:'act'}, lineOk() && a.ctx ? 'Copy line' : 'Copy word');
+  cp.addEventListener('click', () => copyText(lineOk() && a.ctx ? a.ctx : a.w, cp));
+  $detail.append(h('div', {class:'acts'},
+    h('button', {type:'button', class:'act primary', onclick:() => mapWord(a)}, `Map ${a.w}`),
+    h('button', {type:'button', class:'act', 'aria-pressed':String(listed), onclick:() => toggleShortlist(a.w)}, listed ? 'Remove from shortlist' : 'Shortlist'),
+    cp));
+  if (a.note) $detail.append(h('div', {class:'dsec'}, h('p', {class:'dnote'}, a.note)));
+  const prof = h('div', {class:'dsec'}, h('small', {}, `Against ${hd.w}`));
+  PROFILE.forEach(d => prof.append(profRow(d, a[d], hd.senses ? hd[d] : null)));
+  prof.append(h('div', {class:'legend'}, h('span', {}, h('i', {class:'a'}), a.w), h('span', {}, h('i', {class:'b'}), hd.w)));
+  $detail.append(prof);
+
+  const k = detailKey(a), d = details.get(k);
+  if (!d || d.loading) { $detail.append(h('div', {class:'dsec'}, h('p', {class:'dwait'}, 'Loading meaning and cautions\u2026'))); return; }
+  if (d.error) {
+    const msg = d.error === 'unavailable' ? 'Meaning and cautions need a connection to Claude.' : (ERR[d.error] || 'Couldn\u2019t load meaning and cautions.');
+    const box = h('div', {class:'dsec'}, h('p', {class:'dwait'}, msg + ' '));
+    if (d.error !== 'unavailable' && d.error !== 'not_granted' && d.error !== 'sampling_disabled') box.firstChild.append(h('button', {type:'button', class:'linkbtn', onclick:() => { details.delete(k); loadDetail(a); renderDetail(); }}, 'Try again'));
+    $detail.append(box); return;
+  }
+  const x = d.data || {};
+  const str = v => (typeof v === 'string' ? v : '').trim();
+  const arr = v => Array.isArray(v) ? v.map(y => String(y).trim()).filter(Boolean).slice(0, 8) : [];
+  const sec = (label, body) => body ? $detail.append(h('div', {class:'dsec'}, h('small', {}, label), body)) : null;
+  sec('Meaning', str(x.def) && h('p', {}, str(x.def)));
+  sec('What it implies', str(x.conn) && h('p', {}, str(x.conn)));
+  sec('Use it when', str(x.use) && h('p', {}, str(x.use)));
+  sec('Avoid it when', str(x.avoid) && h('p', {}, str(x.avoid)));
+  const worn = arr(x.worn);
+  sec('Worn thin in', worn.length ? h('div', {class:'tags'}, worn.map(c => h('span', {class:'tag'}, c))) : h('p', {}, 'No stock phrases. It hasn\u2019t been worn thin in advertising.'));
+  const opp = arr(x.opp);
+  sec('Opposites (tap to map)', opp.length && h('div', {class:'tags'}, opp.map(o => h('button', {type:'button', class:'tag', onclick:() => mapPlain(o)}, o))));
+}
+
+/* ---------- Render: path ---------- */
+function renderTrail() {
+  $trail.textContent = '';
+  if (state.trail.length < 2 && state.currentKey === SEED_KEY) { $trail.append(h('small', {}, 'Your path through words appears here as you map them.')); return; }
+  $trail.append(h('small', {}, 'Your path'));
+  state.trail.forEach((tr, i) => {
+    const snapT = cache.get(tr.key);
+    $trail.append(h('span', {}, h('sup', {}, i + 1), h('button', {type:'button', title: snapT && snapT.query.line ? snapT.query.line : null, 'aria-current':String(tr.key === state.currentKey), onclick:() => {
+      const snap = cache.get(tr.key); if (snap) loadSnapshot(snap, tr.key);
+    }}, tr.w)));
+  });
+}
+
+function renderAll() { renderHero(); renderControls(); drawField(true); renderTray(); renderDetail(); renderTrail(); }
+
+/* ---------- Wiring ---------- */
+function go() {
+  const raw = (state.editing ? state.draft : heroText()).trim().replace(/\s+/g, ' ');
+  const intent = $i.value.trim();
+  const words = raw.match(/[\p{L}'\u2019-]+/gu) || [];
+  if (!words.length) { setStatus('Type a word, or paste the line it lives in.'); if (!state.editing) startEdit(true); else { const ta = $hero.querySelector('.heroedit'); if (ta) ta.focus(); } return; }
+  if (words.length === 1) { lookup(words[0], '', intent); return; }
+  // A line. If it is the line already mapped, remap the same word with the new feeling.
+  if (raw.toLowerCase() === (state.query.line || '').toLowerCase() && state.head.w && raw.toLowerCase().includes(state.head.w.toLowerCase())) {
+    lookup(state.head.w, raw, intent); return;
+  }
+  state.pending = raw; state.selected = null; state.editing = false;
+  renderHero(); renderDetail(); idleStatus();
+  if (window.matchMedia('(max-width: 899px)').matches) $hero.scrollIntoView({block:'start', behavior:'smooth'});
+}
+$i.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); go(); } });
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && state.selected) deselect();
+  if (e.key === '/' && !/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)) { e.preventDefault(); startEdit(true); }
+});
+
+$i.value = state.query.intent;
+renderAll(); idleStatus();
+initEngine();
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { if (!state.editing) renderHero(); drawField(false); });
+})();
+</script>
+</body>
+</html>
